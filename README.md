@@ -20,7 +20,7 @@ translation. Runs **entirely locally** as a single app.
 YouTube URL
    │  yt-dlp            download the video
    │  ffmpeg            frames every 5s + one clip per beat
-   │  whisper-cli       transcribe audio → timed sentences
+   │  transcript        YouTube captions → else faster-whisper (CPU, int8)
    │  Claude agent  ──▶ build_story  (acts + beats, English)
    │  Claude agent  ──▶ translate    (story + captions → target language)
    ▼
@@ -32,14 +32,22 @@ story-timeline UI  +  self-contained summary.html
 System binaries on your `PATH`:
 
 - [`yt-dlp`](https://github.com/yt-dlp/yt-dlp), `ffmpeg` + `ffprobe`
-- [`whisper-cli`](https://github.com/ggml-org/whisper.cpp) and a ggml model
-  (default `small.en`) under `~/.cache/hyperframes/whisper/models/` (override with
-  `WHISPER_MODELS` / `WHISPER_MODEL`)
 - **Claude Code** (`claude` CLI), logged in — the agent uses your session, so no
   API key is required. (Alternatively, set `ANTHROPIC_API_KEY`.)
-- Python 3.10+, and Node 18+ (to build the UI)
+- Python 3.10+. Node 18+ only if you want to build the web UI (the CLI and the
+  `/tvl-extract` command don't need it).
 
-macOS: `brew install yt-dlp ffmpeg whisper-cpp`
+macOS: `brew install yt-dlp ffmpeg`
+
+**Transcription** needs no setup: the pipeline uses the video's **YouTube captions**
+when present, and falls back to **faster-whisper** (installed via `pip`, runs int8 on
+CPU — light enough for a 1-vCPU box) when there are none. `whisper-cli` is an optional
+third option. Control it with `TRANSCRIBE_PREFER` (`captions`|`asr`), `ASR_BACKEND`
+(`faster-whisper`|`whisper-cli`), and `ASR_MODEL` (e.g. `tiny.en`, `base.en`).
+
+> **Self-hosting on a server?** YouTube blocks most **datacenter IPs** with a
+> bot-check, so `yt-dlp` downloads fail from typical cloud VMs. Run it locally, or
+> pass cookies / a proxy to `yt-dlp` (`--cookies`, `--proxy`) on a server.
 
 ## Setup
 
@@ -109,19 +117,31 @@ Both use the logged-in `claude` session for the agent step, so no API key is req
 | GET | `/api/jobs/{id}/stream` | Server-Sent Events progress |
 | GET | `/api/jobs/{id}/result` | the story JSON (acts, beats, captions, media URLs) |
 | GET | `/api/jobs/{id}/summary.html` | download the self-contained HTML |
-| GET | `/api/health` | `{ok, model}` |
+| POST | `/api/submit` | `{url, email, lang}` → generate, then email a `/view?h=<md5>` link |
+| GET | `/view?h=<md5>` | the generated page (or a self-refreshing "still cooking" page) |
+| GET | `/api/health` | `{ok, auth, model}` |
+
+### Email delivery (optional)
+
+`POST /api/submit` is a fire-and-forget mode: paste a URL + email, the job runs in
+the background, and the result link (`/view?h=<md5>`, md5 of videoId+email) is
+**emailed** when ready. Set `RESEND_API_KEY` + `MAIL_FROM` to actually send; without
+them the link is just logged. The product landing page for this lives at
+`backend/web/` and is served at `/`.
 
 ## Configuration
 
-Set in `backend/.env`:
+Set in `backend/.env` (see `backend/.env.example`):
 
 | Var | Default | Notes |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | — | optional — if set, uses the Anthropic SDK instead of the `claude` CLI session |
 | `ANTHROPIC_MODEL` | session default | any Claude model id |
-| `CLAUDE_BIN` | `claude` | path to the `claude` CLI |
-| `WHISPER_MODEL` | `small.en` | ggml model name or absolute path |
-| `WHISPER_MODELS` | `~/.cache/hyperframes/whisper/models` | model directory |
+| `TRANSCRIBE_PREFER` | `captions` | `captions` (YouTube subs first) or `asr` |
+| `ASR_BACKEND` | `faster-whisper` | or `whisper-cli` |
+| `ASR_MODEL` | `base.en` | faster-whisper model (`tiny.en`, `base.en`, `small.en`, …) |
+| `RESEND_API_KEY` / `MAIL_FROM` | — | enable email delivery for `/api/submit` |
+| `BASE_URL` | `http://localhost:8000` | used to build the emailed `/view` link |
 
 ## Notes
 
