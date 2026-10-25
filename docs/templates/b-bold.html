@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TVL YouTube Extractor — Bold</title>
+<link rel="icon" href="../assets/tvl-academy-logo.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#f3ead6; --ink:#141210; --coral:#ff4931; --lime:#c9f24a; --sky:#5cc8ff; --card:#fffef8; --line:#141210;
+    --disp:"Syne",sans-serif; --mono:"Space Mono",ui-monospace,monospace; }
+  * { box-sizing:border-box; } body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:16px;line-height:1.6}
+  a{color:inherit;text-decoration:none} .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:var(--disp);font-weight:800;margin:0;letter-spacing:-.02em;line-height:1}
+  .box{border:3px solid var(--ink);background:var(--card);box-shadow:7px 7px 0 var(--ink)}
+  nav{border-bottom:3px solid var(--ink)} nav .wrap{display:flex;align-items:center;gap:14px;height:76px}
+  nav .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:800;font-size:19px}
+  nav .brand img{height:28px} nav .brand small{font-family:var(--mono);font-size:12px;font-weight:400;background:var(--lime);border:2px solid var(--ink);padding:2px 7px}
+  nav .sp{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:800;font-size:16px;padding:12px 22px;border:3px solid var(--ink);background:var(--coral);color:#fff;box-shadow:5px 5px 0 var(--ink);cursor:pointer;transition:.1s}
+  .btn:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+  .btn.y{background:var(--lime);color:var(--ink)} .btn.w{background:var(--card);color:var(--ink)}
+  .tag{display:inline-block;font-family:var(--mono);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.1em;background:var(--ink);color:var(--lime);padding:6px 12px}
+  .hero{padding:66px 0}
+  .hero h1{font-size:clamp(48px,9vw,112px);margin:22px 0 0;text-transform:uppercase}
+  .hero h1 .c{color:var(--coral);-webkit-text-stroke:0} .hero .lede{font-size:18px;max-width:52ch;margin:24px 0 28px;font-weight:400}
+  .cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .cmd{font-family:var(--mono);font-size:13px;border:3px solid var(--ink);background:var(--card);padding:11px 15px;box-shadow:5px 5px 0 var(--ink)}
+  section{padding:70px 0}
+  .kick{font-family:var(--mono);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--coral);margin-bottom:12px;display:block}
+  h2{font-size:clamp(32px,5vw,58px);text-transform:uppercase}
+  .feat{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
+  .f{padding:22px}.f .n{font-family:var(--disp);font-weight:800;font-size:26px}
+  .f:nth-child(1) .n{color:var(--coral)}.f:nth-child(2) .n{color:#1a9e8f}.f:nth-child(3) .n{color:#c58a1a}.f:nth-child(4) .n{color:#6a53e0}
+  .f h3{font-size:20px;margin:10px 0 6px;text-transform:uppercase} .f p{margin:0;font-size:13.5px;font-weight:400}
+  .ex{display:grid;grid-template-columns:1fr 1.1fr;gap:34px;align-items:center;margin-top:38px}
+  .ex .panel{padding:30px} .ex p{font-weight:400;margin:14px 0 20px}
+  .stats{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 22px}
+  .stats .s{border:3px solid var(--ink);padding:10px 14px;background:var(--bg)} .stats b{font-family:var(--disp);font-size:24px;display:block} .stats span{font-size:11px;text-transform:uppercase}
+  .shot{border:3px solid var(--ink);box-shadow:9px 9px 0 var(--ink);background:#fff} .shot .bar{display:flex;gap:7px;padding:9px 12px;border-bottom:3px solid var(--ink);background:var(--lime)} .shot .bar i{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:#fff} .shot img{display:block;width:100%}
+  pre{background:var(--ink);color:var(--lime);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--coral);padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;margin:18px 0 0}
+  pre .c{color:#7d8a5a}
+  footer{border-top:3px solid var(--ink);padding:40px 0} footer .wrap{display:flex;align-items:center;gap:14px} footer .brand{display:flex;gap:10px;align-items:center;font-family:var(--disp);font-weight:800} footer img{height:26px} footer .sp{flex:1}
+  @media(max-width:820px){.feat{grid-template-columns:1fr 1fr}.ex{grid-template-columns:1fr;gap:26px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="brand" href="#"><img src="../assets/tvl-academy-logo.svg" alt="">TVL ACADEMY <small>extractor</small></a><span class="sp"></span><a class="btn w" href="https://github.com/danlex/tvl-youtube-extractor">GITHUB</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="tag">Claude Code · skill</span>
+  <h1>Watch less.<br><span class="c">Understand more.</span></h1>
+  <p class="lede">Drop in a YouTube link. A Claude agent reads the whole thing and hands back a story-timeline page — frames, a clip per beat, and a bilingual transcript, in one file.</p>
+  <div class="cta"><a class="btn" href="#ex">SEE AN EXAMPLE →</a><span class="cmd">❯ /tvl-extract &lt;url&gt;</span></div>
+</div></header>
+
+<section><div class="wrap">
+  <span class="kick">// what it gives you</span>
+  <h2>One page. The whole video.</h2>
+  <div class="feat">
+    <div class="box f"><div class="n">01</div><h3>Story timeline</h3><p>A color-coded act &amp; beat graph.</p></div>
+    <div class="box f"><div class="n">02</div><h3>A clip per beat</h3><p>A looping clip at each beat.</p></div>
+    <div class="box f"><div class="n">03</div><h3>Every frame</h3><p>A timestamped gallery.</p></div>
+    <div class="box f"><div class="n">04</div><h3>Bilingual script</h3><p>Captions + a translation.</p></div>
+  </div>
+</div></section>
+
+<section id="ex"><div class="wrap">
+  <span class="kick">// a real extraction</span>
+  <div class="ex">
+    <div class="box panel">
+      <h2 style="font-size:34px">See what it makes.</h2>
+      <p>An 8-minute Riemann-hypothesis explainer, run end to end — six acts, sixteen beats with clips, full transcript + Romanian.</p>
+      <div class="stats"><div class="s"><b>8:05</b><span>run</span></div><div class="s"><b>16</b><span>beats</span></div><div class="s"><b>84</b><span>caps</span></div><div class="s"><b>98</b><span>frames</span></div></div>
+      <a class="btn y" href="../examples/riemann-hypothesis-ai.html">OPEN LIVE →</a>
+    </div>
+    <a class="shot" href="../examples/riemann-hypothesis-ai.html"><span class="bar"><i></i><i></i><i></i></span><img src="../assets/example-shot.png" alt=""></a>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <span class="kick">// install</span>
+  <h2>One line.</h2>
+  <pre><span class="c"># command + skill → Claude Code</span>
+curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash</pre>
+</div></section>
+
+<footer><div class="wrap"><span class="brand"><img src="../assets/tvl-academy-logo.svg" alt="">TVL ACADEMY</span><span class="sp"></span><a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a></div></footer>
+</body>
+</html>
