@@ -1,7 +1,7 @@
 ---
 description: Extract a YouTube video into a story-timeline HTML summary (frames, per-beat clips, bilingual transcript) using the TVL YouTube Extractor
 argument-hint: <youtube-url> [language]
-allowed-tools: Bash(/Users/adan/work/claude/code/tvl-youtube-extractor/extract.sh:*), Read
+allowed-tools: Bash(__EXTRACT_SH__:*), Read
 ---
 
 Run the TVL YouTube Extractor on: **$ARGUMENTS**
@@ -18,7 +18,7 @@ Do this:
    translate it — authenticating off the logged-in `claude` session, no API key):
 
    ```
-   /Users/adan/work/claude/code/tvl-youtube-extractor/extract.sh "<URL>" --lang "<LANGUAGE>" --open
+   __EXTRACT_SH__ "<URL>" --lang "<LANGUAGE>" --open
    ```
 
    Progress prints on stderr; the final line on **stdout is the path to the
