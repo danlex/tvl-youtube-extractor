@@ -219,7 +219,7 @@
     <span class="links">
       <a href="#example">Example</a>
       <a href="#run">Use it</a>
-      <a href="#how">How</a>
+      <a href="#install">Install</a>
       <a class="btn btn-light" href="https://github.com/danlex/tvl-youtube-extractor">GitHub</a>
     </span>
   </div>
@@ -373,21 +373,24 @@
       use the Anthropic API instead, and change the language with the second argument.</div>
   </section>
 
-  <section class="reveal">
+  <section id="install" class="reveal">
     <span class="kicker">Install</span>
-    <h2>One line. That's it.</h2>
-    <p class="sub" style="margin-bottom:22px">Installs the <code>/tvl-extract</code> command and the skill into Claude Code.</p>
-    <pre style="font-size:14px;border-color:var(--coral)"><span class="c"># paste into your terminal</span>
+    <h2>Two ways in.</h2>
+    <div class="ways" style="margin-top:34px">
+      <div class="way"><div class="num">A</div><h3>The skill &amp; command</h3>
+        <p>One line — adds <code>/tvl-extract</code> and the skill to Claude Code.</p>
+        <pre><span class="c"># paste into your terminal</span>
 curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash</pre>
-    <p style="color:var(--muted);font-size:14px;margin-top:12px">Then, in a new Claude Code session:
-      <code>/tvl-extract https://youtu.be/… Romanian</code></p>
-    <table>
-      <tr><th>Tool</th><th>Why</th><th>Install (macOS)</th></tr>
-      <tr><td><code>yt-dlp</code></td><td>download the video</td><td rowspan="3"><code>brew install yt-dlp ffmpeg whisper-cpp</code></td></tr>
-      <tr><td><code>ffmpeg</code> / <code>ffprobe</code></td><td>frames &amp; clips</td></tr>
-      <tr><td><code>whisper-cli</code> + a ggml model</td><td>transcription</td></tr>
-      <tr><td>Claude Code (logged in)</td><td>the agent — session auth</td><td>—</td></tr>
-    </table>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:12px">Then: <code>/tvl-extract https://youtu.be/… Romanian</code></p>
+      </div>
+      <div class="way"><div class="num">B</div><h3>The full app</h3>
+        <p>Clone and run it locally — serves the UI + API at localhost:8000.</p>
+        <pre><span class="o">git clone</span> https://github.com/danlex/tvl-youtube-extractor.git
+<span class="o">cd</span> tvl-youtube-extractor &amp;&amp; <span class="o">./run.sh</span></pre>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:12px">Prereqs: <code>brew install yt-dlp ffmpeg</code> · Python 3.10+</p>
+      </div>
+    </div>
+    <p style="margin-top:22px"><a href="install.html" style="color:var(--coral-deep);font-weight:700">Full install &amp; update guide →</a></p>
   </section>
 
 </div>

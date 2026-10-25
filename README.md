@@ -14,6 +14,25 @@ translation. Runs **entirely locally** as a single app.
   self-contained `summary.html` (all frames + clips embedded as data URIs). See
   `examples/riemann-hypothesis-ai.html` for a finished sample.
 
+**Links:** [live site](https://danlex.github.io/tvl-youtube-extractor/) ·
+[install guide](https://danlex.github.io/tvl-youtube-extractor/install.html) ·
+[sample output](https://danlex.github.io/tvl-youtube-extractor/examples/riemann-hypothesis-ai.html)
+
+## Quick start
+
+```bash
+# A) use it inside Claude Code — installs /tvl-extract + the skill
+curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash
+
+# B) run the full app locally
+git clone https://github.com/danlex/tvl-youtube-extractor.git
+cd tvl-youtube-extractor && ./run.sh      # → http://localhost:8000
+```
+
+Needs `yt-dlp` + `ffmpeg` (`brew install yt-dlp ffmpeg`) and Claude Code logged in
+(or `ANTHROPIC_API_KEY`). Full details below or in the
+[install guide](https://danlex.github.io/tvl-youtube-extractor/install.html).
+
 ## How it works
 
 ```
