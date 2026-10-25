@@ -57,6 +57,37 @@ backend/.env` and set `ANTHROPIC_API_KEY`.
 backend venv, installs deps, and serves the API **and** the UI at
 `http://localhost:8000`.
 
+## Headless CLI (no web server)
+
+One-shot extraction straight to a self-contained `summary.html`:
+
+```bash
+./extract.sh "https://youtu.be/VIDEO_ID" --lang Romanian --open
+# prints the summary.html path on stdout; --open opens it in the browser
+```
+
+Equivalent: `cd backend && python -m extractor.cli <url> --lang <language>`.
+Outputs land in `backend/jobs/<id>/` (video, frames, clips, transcript, result.json,
+summary.html).
+
+## Claude Code integration
+
+This repo ships a slash command and a skill (in `.claude/`). Install them for use in
+any Claude Code session:
+
+```bash
+cp .claude/commands/tvl-extract.md ~/.claude/commands/
+cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/
+```
+
+- **`/tvl-extract <youtube-url> [language]`** — runs the headless extractor and
+  reports the resulting `summary.html` (opens it too).
+- **`tvl-youtube-extractor` skill** — lets Claude run the tool automatically when you
+  ask it to "extract / summarize / transcribe a YouTube video". Documents the CLI, the
+  web app, auth, and prerequisites.
+
+Both use the logged-in `claude` session for the agent step, so no API key is required.
+
 ## Development
 
 ```bash

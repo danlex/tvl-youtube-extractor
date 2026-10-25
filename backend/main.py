@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from extractor import agent, pipeline, render
+from extractor import agent, orchestrate, pipeline
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 JOBS_DIR = os.path.join(HERE, "jobs")
@@ -43,98 +43,13 @@ class ExtractReq(BaseModel):
 
 def run_job(job_id, url, lang):
     outdir = os.path.join(JOBS_DIR, job_id)
-    os.makedirs(outdir, exist_ok=True)
     try:
-        _set(job_id, step="Reading video info", pct=5)
-        info = pipeline.meta(url)
-        _set(job_id, title=info["title"])
-
-        _set(job_id, step="Downloading video", pct=20)
-        video = pipeline.download(url, outdir)
-        duration = pipeline.probe_dur(video)
-
-        _set(job_id, step="Extracting frames", pct=38)
-        frames_dir = os.path.join(outdir, "frames")
-        frames = pipeline.extract_frames(video, frames_dir, every=5, width=640)
-
-        _set(job_id, step="Transcribing audio", pct=55)
-        segments = pipeline.transcribe(video, outdir,
-                                       model=os.environ.get("WHISPER_MODEL", "small.en"))
-        groups = pipeline.sentence_groups(segments)
-
-        _set(job_id, step="Claude is mapping the story", pct=72)
-        story = agent.build_story(groups, duration, cwd=outdir)
-
-        _set(job_id, step=f"Claude is translating ({lang})", pct=84)
-        tr = agent.translate(story, groups, lang=lang, cwd=outdir)
-
-        _set(job_id, step="Cutting beat clips", pct=92)
-        clips_dir = os.path.join(outdir, "clips")
-        os.makedirs(clips_dir, exist_ok=True)
-        beats = story["beats"]
-        beat_clip_files = []
-        for i, b in enumerate(beats):
-            nxt = beats[i + 1]["t"] if i + 1 < len(beats) else duration
-            d = max(3.0, min(6.0, nxt - b["t"])) if nxt > b["t"] else 6.0
-            cp = os.path.join(clips_dir, f"clip_{i:02d}.mp4")
-            if not os.path.exists(cp):
-                pipeline.cut_clip(video, b["t"], d, cp)
-            beat_clip_files.append(cp)
-
-        _set(job_id, step="Assembling", pct=97)
-        result = build_result(job_id, info, url, lang, story, tr, beats,
-                              beat_clip_files, frames, groups)
-        json.dump(result, open(os.path.join(outdir, "result.json"), "w"),
-                  ensure_ascii=False, indent=2)
-
-        # portable self-contained HTML (data URIs)
-        captions = _captions(groups, tr)
-        gallery_du = [(s, pipeline.data_uri(p)) for s, p in frames]
-        beat_du = [pipeline.data_uri(p) for p in beat_clip_files]
-        html = render.render_html(story, tr, beat_du, gallery_du, captions, url,
-                                  lang=lang)
-        open(os.path.join(outdir, "summary.html"), "w").write(html)
-
+        orchestrate.extract(job_id, url, lang, outdir,
+                            progress=lambda **k: _set(job_id, **k))
         _set(job_id, status="done", step="Done", pct=100)
     except Exception as e:
         traceback.print_exc()
         _set(job_id, status="error", step="Failed", error=str(e))
-
-
-def _captions(groups, tr):
-    rot = {round(c["start"], 1): c["text"] for c in tr.get("captions", [])}
-    return [(s, en, rot.get(round(s, 1), "")) for s, _d, en in groups]
-
-
-def build_result(job_id, info, url, lang, story, tr, beats, clip_files, frames, groups):
-    color = {a["key"]: render.PALETTE[i % len(render.PALETTE)]
-             for i, a in enumerate(story["acts"])}
-    labelt = {a["key"]: t["label"] for a, t in zip(story["acts"], tr.get("acts", story["acts"]))}
-    tbeats = tr.get("beats", [{} for _ in beats])
-    base = f"/media/{job_id}"
-    return {
-        "id": job_id,
-        "title": story["title"],
-        "title_t": tr.get("title", ""),
-        "source": url,
-        "uploader": info.get("uploader", ""),
-        "duration": story.get("duration", 0),
-        "lang": lang,
-        "acts": [{"key": a["key"], "label": a["label"],
-                  "label_t": labelt.get(a["key"], ""), "color": color[a["key"]]}
-                 for a in story["acts"]],
-        "beats": [{
-            "t": b["t"], "mmss": pipeline.mmss(b["t"]), "act": b["act"],
-            "color": color.get(b["act"], "#999"),
-            "title": b["title"], "title_t": tbeats[i].get("title", ""),
-            "summary": b["summary"], "summary_t": tbeats[i].get("summary", ""),
-            "clip_url": f"{base}/clips/clip_{i:02d}.mp4",
-        } for i, b in enumerate(beats)],
-        "gallery": [{"sec": s, "mmss": pipeline.mmss(s),
-                     "url": f"{base}/frames/{os.path.basename(p)}"} for s, p in frames],
-        "captions": [{"start": s, "mmss": pipeline.mmss(s), "en": en,
-                      "t": rot} for s, en, rot in _captions(groups, tr)],
-    }
 
 
 @app.post("/api/extract")
