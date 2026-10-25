@@ -63,10 +63,10 @@ def run_job(job_id, url, lang):
         groups = pipeline.sentence_groups(segments)
 
         _set(job_id, step="Claude is mapping the story", pct=72)
-        story = agent.build_story(groups, duration)
+        story = agent.build_story(groups, duration, cwd=outdir)
 
         _set(job_id, step=f"Claude is translating ({lang})", pct=84)
-        tr = agent.translate(story, groups, lang=lang)
+        tr = agent.translate(story, groups, lang=lang, cwd=outdir)
 
         _set(job_id, step="Cutting beat clips", pct=92)
         clips_dir = os.path.join(outdir, "clips")
@@ -196,7 +196,9 @@ def job_html(job_id: str):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "model": agent.MODEL}
+    return {"ok": True,
+            "auth": "api-key" if agent.USE_SDK else "claude-cli-session",
+            "model": agent.MODEL or "session default"}
 
 
 # Serve the built Next.js static export as a single local app (if present).

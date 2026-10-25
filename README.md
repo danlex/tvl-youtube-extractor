@@ -7,7 +7,9 @@ translation. Runs **entirely locally** as a single app.
 
 - **Frontend** — Next.js (static export), served by the backend.
 - **Backend** — FastAPI. Background worker runs the media pipeline; a **Claude
-  agent** (Anthropic SDK, structured outputs) writes the story and the translation.
+  agent** writes the story and the translation. By default it uses your logged-in
+  `claude` CLI session (**no API key needed**); set `ANTHROPIC_API_KEY` to use the
+  Anthropic SDK directly instead.
 - **Output** — an interactive page in the browser, plus a downloadable
   self-contained `summary.html` (all frames + clips embedded as data URIs). See
   `examples/riemann-hypothesis-ai.html` for a finished sample.
@@ -33,17 +35,23 @@ System binaries on your `PATH`:
 - [`whisper-cli`](https://github.com/ggml-org/whisper.cpp) and a ggml model
   (default `small.en`) under `~/.cache/hyperframes/whisper/models/` (override with
   `WHISPER_MODELS` / `WHISPER_MODEL`)
+- **Claude Code** (`claude` CLI), logged in — the agent uses your session, so no
+  API key is required. (Alternatively, set `ANTHROPIC_API_KEY`.)
 - Python 3.10+, and Node 18+ (to build the UI)
 
 macOS: `brew install yt-dlp ffmpeg whisper-cpp`
 
 ## Setup
 
+No key needed if you're logged into Claude Code:
+
 ```bash
-cp backend/.env.example backend/.env    # add your ANTHROPIC_API_KEY
-./run.sh                                 # builds UI, installs deps, serves everything
+./run.sh            # builds the UI, installs deps, serves everything
 # open http://localhost:8000
 ```
+
+To use the Anthropic API instead of your session, `cp backend/.env.example
+backend/.env` and set `ANTHROPIC_API_KEY`.
 
 `run.sh` builds the frontend once (delete `frontend/out` to rebuild), creates the
 backend venv, installs deps, and serves the API **and** the UI at
@@ -73,8 +81,9 @@ Set in `backend/.env`:
 
 | Var | Default | Notes |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | — | **required** |
-| `ANTHROPIC_MODEL` | `claude-opus-4-8` | any Claude model id |
+| `ANTHROPIC_API_KEY` | — | optional — if set, uses the Anthropic SDK instead of the `claude` CLI session |
+| `ANTHROPIC_MODEL` | session default | any Claude model id |
+| `CLAUDE_BIN` | `claude` | path to the `claude` CLI |
 | `WHISPER_MODEL` | `small.en` | ggml model name or absolute path |
 | `WHISPER_MODELS` | `~/.cache/hyperframes/whisper/models` | model directory |
 

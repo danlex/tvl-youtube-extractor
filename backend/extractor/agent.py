@@ -1,33 +1,61 @@
 """The Claude agent: turns a raw transcript into a structured story.
 
-Two structured-output calls against the Anthropic Messages API:
-  1. build_story  — segment the narration into a narrative arc (acts + beats)
-  2. translate    — translate the story + captions into the target language
+Two jobs — build_story (segment the narrative) and translate (story + captions).
 
-Model defaults to claude-opus-4-8 (override with ANTHROPIC_MODEL). Streaming is
-used so long transcripts/outputs don't hit HTTP timeouts. Output is constrained
-with output_config.format (JSON schema) so the result is always valid JSON.
+Auth: by default the agent shells out to the `claude` CLI in headless mode
+(`claude -p --output-format json`), which uses your logged-in Claude session — no
+API key required. If ANTHROPIC_API_KEY is set, it uses the Anthropic SDK instead
+(structured outputs). Override the model with ANTHROPIC_MODEL.
 """
 import json
 import os
+import re
+import subprocess
 
-import anthropic
-
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
-_client = None
-
-
-def client():
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
-    return _client
+MODEL = os.environ.get("ANTHROPIC_MODEL")          # None => session/CLI default
+USE_SDK = bool(os.environ.get("ANTHROPIC_API_KEY"))
+CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 
 
-def _run(system, user, schema, max_tokens=32000):
-    with client().messages.stream(
-        model=MODEL,
-        max_tokens=max_tokens,
+# ----------------------------------------------------------------- JSON helpers
+def _extract_json(text):
+    t = (text or "").strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z]*\n?", "", t)
+        t = re.sub(r"\n?```$", "", t).strip()
+    try:
+        return json.loads(t)
+    except json.JSONDecodeError:
+        i, j = t.find("{"), t.rfind("}")
+        if i >= 0 and j > i:
+            return json.loads(t[i:j + 1])
+        raise
+
+
+# ----------------------------------------------------------------- CLI backend
+def _run_cli(system, user, cwd=None):
+    # No tools: these are pure text->JSON transforms. Without this the model may
+    # attempt a tool call and hit the turn limit (error_max_turns).
+    cmd = [CLAUDE_BIN, "-p", "--output-format", "json",
+           "--append-system-prompt", system, "--tools", "", "--max-turns", "2"]
+    if MODEL:
+        cmd += ["--model", MODEL]
+    r = subprocess.run(cmd, input=user, capture_output=True, text=True, cwd=cwd)
+    if r.returncode != 0:
+        raise RuntimeError(f"claude CLI failed: {(r.stderr or r.stdout).strip()[:500]}")
+    env = json.loads(r.stdout)
+    if env.get("is_error"):
+        raise RuntimeError(f"claude error: {str(env.get('result',''))[:300]}")
+    return _extract_json(env["result"])
+
+
+# ----------------------------------------------------------------- SDK backend
+def _run_sdk(system, user, schema):
+    import anthropic
+    client = anthropic.Anthropic()
+    with client.messages.stream(
+        model=MODEL or "claude-opus-4-8",
+        max_tokens=32000,
         thinking={"type": "adaptive"},
         system=system,
         output_config={"format": {"type": "json_schema", "schema": schema}},
@@ -40,104 +68,76 @@ def _run(system, user, schema, max_tokens=32000):
     return json.loads(text)
 
 
+def _run(system, user, schema, cwd=None):
+    return _run_sdk(system, user, schema) if USE_SDK else _run_cli(system, user, cwd)
+
+
+# ----------------------------------------------------------------- story
 STORY_SCHEMA = {
-    "type": "object",
-    "additionalProperties": False,
+    "type": "object", "additionalProperties": False,
     "properties": {
         "title": {"type": "string"},
-        "acts": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "key": {"type": "string"},
-                    "label": {"type": "string"},
-                },
-                "required": ["key", "label"],
-            },
-        },
-        "beats": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "t": {"type": "number"},
-                    "act": {"type": "string"},
-                    "title": {"type": "string"},
-                    "summary": {"type": "string"},
-                },
-                "required": ["t", "act", "title", "summary"],
-            },
-        },
+        "acts": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"key": {"type": "string"}, "label": {"type": "string"}},
+            "required": ["key", "label"]}},
+        "beats": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"t": {"type": "number"}, "act": {"type": "string"},
+                           "title": {"type": "string"}, "summary": {"type": "string"}},
+            "required": ["t", "act", "title", "summary"]}},
     },
     "required": ["title", "acts", "beats"],
 }
 
 STORY_SYSTEM = (
     "You are a story editor. Given a timestamped transcript of a video, produce a "
-    "clear narrative map. Identify 4-7 narrative ACTS (the arc of the story) with a "
-    "short key (lowercase, one word) and a human label. Then break the video into "
-    "10-18 BEATS in chronological order. Each beat has: t = the start time in SECONDS "
-    "(a number taken from the transcript timestamps), act = which act key it belongs "
-    "to, title = a short punchy beat title, summary = 2-4 sentences explaining that "
-    "beat in plain language. Write a concise, accurate overall title for the video. "
-    "Base everything only on the transcript; never invent facts."
+    "clear narrative map. Identify 3-7 narrative ACTS (the arc of the story), each "
+    "with a short lowercase one-word key and a human label. Then split the video "
+    "into chronological BEATS — roughly one beat per 20-45 seconds of video, at "
+    "least 2, no more than 20. Each beat: t = its start time in SECONDS (a number "
+    "from the transcript timestamps), act = one of your act keys, title = a short "
+    "punchy beat title, summary = 2-4 plain-language sentences. Also write a "
+    "concise, accurate overall title for the video. Base everything only on the "
+    "transcript; never invent facts.\n\n"
+    "Return ONLY minified JSON, no prose and no code fence, with exactly this shape: "
+    '{"title":string,"acts":[{"key":string,"label":string}],'
+    '"beats":[{"t":number,"act":string,"title":string,"summary":string}]}'
 )
 
 
-def build_story(groups, duration):
-    """groups: list of (start, dur, text). Returns the English story dict."""
+def build_story(groups, duration, cwd=None):
     lines = "\n".join(f"[{round(s,1)}] {t}" for s, _d, t in groups)
     user = (f"Video duration: {int(duration)} seconds.\n\n"
             f"Transcript (each line prefixed with its start time in seconds):\n{lines}")
-    story = _run(STORY_SYSTEM, user, STORY_SCHEMA)
+    story = _run(STORY_SYSTEM, user, STORY_SCHEMA, cwd=cwd)
     story["duration"] = duration
     return story
 
 
+# ----------------------------------------------------------------- translate
 TRANSLATE_SCHEMA = {
-    "type": "object",
-    "additionalProperties": False,
+    "type": "object", "additionalProperties": False,
     "properties": {
         "title": {"type": "string"},
-        "acts": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {"key": {"type": "string"}, "label": {"type": "string"}},
-                "required": ["key", "label"],
-            },
-        },
-        "beats": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {"title": {"type": "string"}, "summary": {"type": "string"}},
-                "required": ["title", "summary"],
-            },
-        },
-        "captions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {"start": {"type": "number"}, "text": {"type": "string"}},
-                "required": ["start", "text"],
-            },
-        },
+        "acts": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"key": {"type": "string"}, "label": {"type": "string"}},
+            "required": ["key", "label"]}},
+        "beats": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"title": {"type": "string"}, "summary": {"type": "string"}},
+            "required": ["title", "summary"]}},
+        "captions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"start": {"type": "number"}, "text": {"type": "string"}},
+            "required": ["start", "text"]}},
     },
     "required": ["title", "acts", "beats", "captions"],
 }
 
 
-def translate(story, groups, lang="Romanian"):
-    """Translate the story + captions into `lang`. Returns a parallel dict:
-    {title, acts:[{key,label}], beats:[{title,summary}] (same order),
-     captions:[{start,text}] (same starts)}."""
+def translate(story, groups, lang="Romanian", cwd=None):
     payload = {
         "title": story["title"],
         "acts": story["acts"],
@@ -149,7 +149,9 @@ def translate(story, groups, lang="Romanian"):
         f"string in the given JSON into {lang}, natural and fluent. Keep the SAME "
         f"structure, the SAME number of array items, the SAME order, and the SAME "
         f"`key` and `start` values unchanged — translate only `label`, `title`, "
-        f"`summary`, and caption `text`. Do not merge or drop items."
+        f"`summary`, and caption `text`. Do not merge, drop, or add items.\n\n"
+        f"Return ONLY minified JSON, no prose and no code fence, with the same shape "
+        f"as the input."
     )
     user = "Translate this JSON:\n" + json.dumps(payload, ensure_ascii=False)
-    return _run(system, user, TRANSLATE_SCHEMA)
+    return _run(system, user, TRANSLATE_SCHEMA, cwd=cwd)

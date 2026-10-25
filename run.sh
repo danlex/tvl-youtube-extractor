@@ -9,6 +9,11 @@ for bin in yt-dlp ffmpeg ffprobe whisper-cli; do
   command -v "$bin" >/dev/null 2>&1 || missing="$missing $bin"
 done
 [ -n "$missing" ] && echo "[warn] missing on PATH:$missing (install before extracting)"
+# The Claude agent uses your logged-in `claude` CLI session unless ANTHROPIC_API_KEY is set.
+if [ -z "${ANTHROPIC_API_KEY:-}" ] && ! command -v claude >/dev/null 2>&1; then
+  echo "[warn] no ANTHROPIC_API_KEY and no 'claude' CLI — the agent step will fail."
+  echo "       Install Claude Code + log in, or set ANTHROPIC_API_KEY in backend/.env."
+fi
 
 # 1. Build the Next.js static export (once; delete frontend/out to rebuild).
 if command -v npm >/dev/null 2>&1; then
