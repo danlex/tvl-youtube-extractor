@@ -1,5 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>TVL YouTube Extractor — How to use the skill</title>
+<meta name="description" content="Turn a YouTube video into a story-timeline HTML page with a Claude Code skill and the /tvl-extract command. Frames, per-beat clips, and a bilingual transcript." />
+<meta property="og:title" content="TVL YouTube Extractor — How to use the skill" />
+<meta property="og:description" content="Paste a YouTube link; a Claude agent maps the story, pulls frames and clips, and writes a bilingual transcript into one HTML page." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E" />
 <style>
   :root {
     --coral: #ff4931; --teal: #0e9aa7; --ink: #1c1b19; --cream: #f7f2e7;
@@ -43,8 +52,8 @@
   pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 14px 16px;
     overflow-x: auto; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 13.5px; line-height: 1.6; }
-  pre .c { color: #8c8575; }       /* comment */
-  pre .o { color: #ffb3a8; }       /* command / output accent */
+  pre .c { color: #8c8575; }
+  pre .o { color: #ffb3a8; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
     background: #efe7d4; padding: 1px 6px; border-radius: 5px; }
 
@@ -69,7 +78,8 @@
     color: var(--muted); font-size: 13px; }
   a { color: var(--coral); }
 </style>
-
+</head>
+<body>
 <div class="page">
   <p class="eyebrow">Claude Code · Skill &amp; Command</p>
   <h1>Turn a YouTube video into a <em>story-timeline</em> page.</h1>
@@ -161,3 +171,5 @@ cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/</pre>
     · a Claude Code skill + <code>/tvl-extract</code> command.
   </footer>
 </div>
+</body>
+</html>
