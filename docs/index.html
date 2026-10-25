@@ -165,8 +165,8 @@
   .tl-time.end { left:auto; right:0; transform:none; }
 
   /* ways */
-  .ways { display:grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 46px; }
-  .way { background: var(--card); border:1px solid var(--line); border-radius: 18px; padding: 26px; transition:.2s ease; }
+  .ways { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin-top: 46px; }
+  .way { background: var(--card); border:1px solid var(--line); border-radius: 18px; padding: 26px; transition:.2s ease; min-width:0; }
   .way:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -26px rgba(22,19,15,.4); border-color:#d9cebf; }
   .way .num { font-family:var(--display); font-weight:800; font-size:14px; color:var(--coral); }
   .way h3 { font-size: 21px; margin: 10px 0 6px; letter-spacing:-.02em; }
@@ -376,7 +376,7 @@
   <section id="install" class="reveal">
     <span class="kicker">Install</span>
     <h2>Two ways in.</h2>
-    <div class="ways" style="margin-top:34px">
+    <div class="ways" style="margin-top:34px;grid-template-columns:repeat(2,minmax(0,1fr))">
       <div class="way"><div class="num">A</div><h3>The skill &amp; command</h3>
         <p>One line — adds <code>/tvl-extract</code> and the skill to Claude Code.</p>
         <pre><span class="c"># paste into your terminal</span>

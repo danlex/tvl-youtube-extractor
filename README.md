@@ -29,9 +29,25 @@ git clone https://github.com/danlex/tvl-youtube-extractor.git
 cd tvl-youtube-extractor && ./run.sh      # → http://localhost:8000
 ```
 
-Needs `yt-dlp` + `ffmpeg` (`brew install yt-dlp ffmpeg`) and Claude Code logged in
-(or `ANTHROPIC_API_KEY`). Full details below or in the
+**No API key needed** — the agent runs through your logged-in Claude Code session.
+You just need `yt-dlp` + `ffmpeg` (`brew install yt-dlp ffmpeg`) and Claude Code
+installed and logged in. Full details in the
 [install guide](https://danlex.github.io/tvl-youtube-extractor/install.html).
+
+## Using it
+
+Every method takes one input — a YouTube link — and returns a page with the story,
+frames, clips, and a bilingual transcript.
+
+- **In Claude Code (easiest):** `/tvl-extract https://youtu.be/… Romanian` — or just
+  say *“summarize this YouTube video: <link>”* and the skill runs it.
+- **In your browser:** `./run.sh` → open `http://localhost:8000`, paste a link, pick a
+  language, click **Extract**, watch progress, then view/download the page.
+- **From the terminal:** `./extract.sh "https://youtu.be/…" --lang Romanian --open` —
+  prints one self-contained `summary.html` and opens it.
+
+Change the language with the second argument (`French`, `Spanish`, `German`, …); the
+English transcript is always kept alongside the translation.
 
 ## How it works
 

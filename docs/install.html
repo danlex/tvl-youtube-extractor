@@ -3,149 +3,215 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Install — TVL YouTube Extractor</title>
-<meta name="description" content="How to install and run the TVL YouTube Extractor: the one-line Claude Code skill, the headless CLI, and the local web app." />
+<title>Install &amp; use — TVL YouTube Extractor</title>
+<meta name="description" content="Install and use the TVL YouTube Extractor: a one-line Claude Code skill, a headless CLI, or the full local app. No API key — it uses your Claude session." />
 <link rel="icon" href="assets/tvl-academy-logo.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<script>document.documentElement.classList.add("js");</script>
 <style>
-  :root{--coral:#ff4931;--coral-deep:#d83a24;--ink:#16130f;--paper:#f6f1ea;--paper-2:#efe7db;
-    --card:#fffdfa;--line:#e6dccf;--muted:#726a61;--code-bg:#15120f;--code-fg:#f3ead9;
-    --disp:"Bricolage Grotesque",sans-serif;--sans:"Open Sans",system-ui,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+  :root{--coral:#ff4931;--coral-deep:#d83a24;--ink:#16130f;--paper:#f6f1e9;--paper-2:#efe7db;
+    --card:#fffdfa;--line:#e6dccf;--muted:#726a61;--night:#121019;--night-2:#1b1824;--fg-night:#efe9df;
+    --display:"Bricolage Grotesque","Open Sans",sans-serif;--sans:"Open Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;--maxw:1120px}
   *{box-sizing:border-box} html{scroll-behavior:smooth}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.62}
-  a{color:var(--coral-deep)} .wrap{max-width:820px;margin:0 auto;padding:0 24px}
-  h1,h2,h3{font-family:var(--disp);margin:0;letter-spacing:-.02em;line-height:1.05}
-  nav{border-bottom:1px solid var(--line)} nav .wrap{display:flex;align-items:center;gap:12px;height:66px}
-  nav .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:800;font-size:17px;color:var(--ink);text-decoration:none}
-  nav .brand img{height:26px} nav .brand small{font-family:var(--sans);font-weight:600;color:var(--muted);font-size:12px}
-  nav .sp{flex:1} nav a.l{color:var(--muted);font-weight:600;font-size:14px;text-decoration:none;margin-left:20px} nav a.l:hover{color:var(--coral-deep)}
-  header{padding:54px 0 26px} .eyebrow{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--coral-deep)}
-  header h1{font-size:clamp(38px,6vw,60px);margin:14px 0 12px} header p{font-size:19px;color:#4a443c;max-width:56ch;margin:0}
-  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0}
-  .toc a{font-size:13.5px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:7px 13px;border-radius:999px;text-decoration:none}
-  .toc a:hover{border-color:var(--coral)}
-  section{padding:40px 0;border-top:1px solid var(--line)}
-  .kick{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--coral-deep);margin-bottom:6px}
-  .kick .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--coral);color:#fff;font-size:12px}
-  h2{font-size:clamp(24px,3.4vw,34px);margin:4px 0 14px}
-  p{margin:0 0 14px} .muted{color:var(--muted)}
-  pre{background:var(--code-bg);color:var(--code-fg);border-radius:12px;padding:15px 17px;overflow-x:auto;margin:14px 0;
-    font-family:var(--mono);font-size:13.5px;line-height:1.7} pre .c{color:#8c8575} pre .o{color:#ff9484} pre .g{color:#6bd0c6}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none} .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.03em;margin:0}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;padding:12px 20px;border-radius:999px;border:1.5px solid transparent;cursor:pointer;transition:.18s ease}
+  .btn svg{width:16px;height:16px}
+  .btn-coral{background:var(--coral);color:#fff} .btn-coral:hover{background:var(--coral-deep);transform:translateY(-1px)}
+  .btn-light{background:transparent;color:var(--fg-night);border-color:rgba(239,233,223,.28)} .btn-light:hover{border-color:var(--coral);color:#fff}
+  .btn-ghost{background:var(--card);color:var(--ink);border-color:var(--line)} .btn-ghost:hover{border-color:var(--coral)}
+  /* nav */
+  nav{position:absolute;top:0;left:0;right:0;z-index:30} nav .wrap{display:flex;align-items:center;height:78px}
+  nav .brand{display:flex;align-items:center;gap:11px;color:var(--fg-night);font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.02em}
+  nav .brand img{height:30px;width:30px} nav .brand small{font-weight:600;color:#9a9088;font-family:var(--sans);font-size:13px}
+  nav .spacer{flex:1} nav .links{display:flex;align-items:center;gap:26px}
+  nav .links a{color:#b7afa5;font-size:14.5px;font-weight:600} nav .links a:hover{color:#fff}
+  /* hero */
+  .hero{position:relative;background:var(--night);color:var(--fg-night);overflow:hidden;padding:130px 0 0}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(1100px 520px at 78% -6%,rgba(255,73,49,.22),transparent 58%),radial-gradient(760px 480px at 6% 12%,rgba(124,90,248,.10),transparent 60%)}
+  .hero .wrap{position:relative;z-index:2}
+  .tagpill{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ffd9d1;background:rgba(255,73,49,.12);border:1px solid rgba(255,73,49,.3);padding:7px 14px;border-radius:999px;margin-bottom:24px}
+  .tagpill .dot{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(255,73,49,.22)}
+  .hero h1{font-size:clamp(42px,7vw,88px);line-height:.96;max-width:16ch} .hero h1 .hl{color:var(--coral)}
+  .hero p.lede{font-size:clamp(17px,2.1vw,21px);line-height:1.5;color:#c7bfb5;max-width:56ch;margin:22px 0 28px}
+  .hero .cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .hero .cmd{font-family:var(--mono);font-size:13.5px;color:#efe9df;background:rgba(255,255,255,.05);border:1px solid rgba(239,233,223,.14);padding:11px 16px;border-radius:10px;overflow-x:auto;max-width:100%}
+  .hero .cmd b{color:#ff9484;font-weight:600} .hero .cmd .c{color:#6bd0c6}
+  /* filmstrip */
+  .filmstrip{position:relative;margin-top:60px;background:#0b0a10;border-top:1px solid rgba(239,233,223,.08);border-bottom:1px solid rgba(239,233,223,.08);padding:11px 0;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+  .perf{height:11px;background-image:repeating-linear-gradient(90deg,rgba(239,233,223,.16) 0 9px,transparent 9px 26px)}
+  .reel{display:flex;gap:10px;width:max-content;padding:10px 0;animation:slide 48s linear infinite}
+  .reel img{height:82px;width:146px;object-fit:cover;border-radius:4px;background:#060509;border:1px solid rgba(239,233,223,.12)}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  /* sections */
+  section{padding:84px 0} .kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--coral-deep);margin:0 0 16px}
+  h2{font-size:clamp(28px,4vw,46px);line-height:1.04;max-width:20ch} .sub{color:#58524b;font-size:18px;max-width:60ch;margin:16px 0 0}
+  .js .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease} .js .reveal.in{opacity:1;transform:none}
+  .ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:40px}
+  .ways.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .way{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:.2s ease;min-width:0}
+  .way:hover{transform:translateY(-3px);box-shadow:0 20px 40px -26px rgba(22,19,15,.4);border-color:#d9cebf}
+  .way .num{font-family:var(--display);font-weight:800;font-size:14px;color:var(--coral)}
+  .way h3{font-size:21px;margin:10px 0 8px;letter-spacing:-.02em} .way p{color:var(--muted);font-size:14.5px;margin:0 0 14px}
+  .way ol{margin:0 0 14px;padding-left:18px;font-size:14.5px;color:#4a443c} .way ol li{margin:5px 0}
+  pre{background:var(--night);color:var(--fg-night);border-radius:12px;padding:15px 17px;overflow-x:auto;margin:0;font-family:var(--mono);font-size:12.8px;line-height:1.7;border:1px solid var(--night-2)}
+  pre .c{color:#7d766d} pre .o{color:#ff9484} pre .g{color:#6bd0c6}
   code{font-family:var(--mono);font-size:.9em;background:var(--paper-2);padding:1px 6px;border-radius:5px}
-  .hl{border-color:var(--coral)} pre.hl{box-shadow:0 0 0 2px var(--coral)}
-  table{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0}
-  th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);vertical-align:top} tr:last-child td{border-bottom:none}
-  th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper-2)} td code{font-size:12.5px}
-  .note{background:var(--paper-2);border:1px solid #e6c9bf;border-left:4px solid var(--coral);border-radius:0 12px 12px 0;padding:14px 16px;font-size:14.5px;color:#4a4036;margin:14px 0}
-  .note b{color:var(--coral-deep)}
-  ul{margin:0 0 14px;padding-left:20px} li{margin:4px 0}
-  footer{border-top:1px solid var(--line);padding:30px 0 60px;color:var(--muted);font-size:13px}
-  footer a{color:var(--coral-deep)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center;margin-top:40px}
+  .window{border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 70px -30px rgba(22,19,15,.4);background:#fff}
+  .window .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:#efe8df;border-bottom:1px solid var(--line)}
+  .window .bar i{width:11px;height:11px;border-radius:50%;display:block;background:#d9cfc4}
+  .window .bar i:nth-child(1){background:#ff5f57}.window .bar i:nth-child(2){background:#febc2e}.window .bar i:nth-child(3){background:#28c840}
+  .window .bar .url{margin-left:10px;font-family:var(--mono);font-size:12px;color:var(--muted);background:#fff;padding:4px 12px;border-radius:6px;border:1px solid var(--line)}
+  .window img{display:block;width:100%}
+  .clip{width:100%;border-radius:12px;border:1px solid var(--line);background:#0b0d12;display:block;aspect-ratio:16/9;object-fit:cover;margin-top:14px}
+  .note{background:var(--paper-2);border:1px solid #e6c9bf;border-left:4px solid var(--coral);border-radius:0 14px 14px 0;padding:18px 20px;font-size:15px;color:#4a4036;margin-top:28px} .note b{color:var(--coral-deep)}
+  table{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:34px}
+  th,td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:top} tr:last-child td{border-bottom:none}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2)} td code{font-size:13px}
+  footer{background:var(--night);color:#b7afa5;padding:54px 0}
+  footer .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:16px} footer .brand{display:flex;align-items:center;gap:11px;color:#fff;font-family:var(--display);font-weight:800;font-size:17px}
+  footer .brand img{height:30px;width:30px} footer .spacer{flex:1} footer a{color:#ff9484}
+  @media(max-width:900px){nav .links a:not(.btn){display:none} .ways,.ways.three{grid-template-columns:1fr} .twocol{grid-template-columns:1fr;gap:28px}}
+  @media(max-width:560px){.hero{padding-top:104px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto} .reel{animation:none} .reveal{opacity:1;transform:none}}
 </style>
 </head>
 <body>
+
 <nav><div class="wrap">
-  <a class="brand" href="./"><img src="assets/tvl-academy-logo.svg" alt="">TVL Academy <small>YouTube Extractor</small></a>
-  <span class="sp"></span>
-  <a class="l" href="./">Home</a>
-  <a class="l" href="https://github.com/danlex/tvl-youtube-extractor">GitHub</a>
+  <a class="brand" href="./"><img src="assets/tvl-academy-logo.svg" alt="">TVL Academy&nbsp;<small>YouTube Extractor</small></a>
+  <span class="spacer"></span>
+  <span class="links">
+    <a href="./">Home</a>
+    <a href="#use">How to use</a>
+    <a class="btn btn-light" href="https://github.com/danlex/tvl-youtube-extractor">GitHub</a>
+  </span>
 </div></nav>
 
-<header><div class="wrap">
-  <span class="eyebrow">Install &amp; run</span>
-  <h1>Get it running.</h1>
-  <p>Three ways in: a one-line skill for Claude Code, a headless CLI, or the full local web app. Pick what fits.</p>
-  <div class="toc">
-    <a href="#skill">1 · Claude Code skill</a>
-    <a href="#prereq">2 · Prerequisites</a>
-    <a href="#app">3 · The app</a>
-    <a href="#config">4 · Configuration</a>
-    <a href="#update">5 · Updating</a>
+<header class="hero">
+  <div class="wrap">
+    <span class="tagpill"><span class="dot"></span> Install &amp; use</span>
+    <h1>Get it <span class="hl">running.</span></h1>
+    <p class="lede">Two ways in — a one-line skill for Claude Code, or the full local app.
+      <b style="color:#efe9df">No API key</b> — it runs through your logged-in Claude session.</p>
+    <div class="cta">
+      <a class="btn btn-coral" href="#install">Install it
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      <span class="cmd"><span class="c">❯</span> /tvl-extract <b>https://youtu.be/…</b></span>
+    </div>
   </div>
-</div></header>
+  <div class="filmstrip"><div class="perf"></div>
+    <div class="reel">
+      <img src="assets/strip/s01.jpg" alt=""><img src="assets/strip/s02.jpg" alt=""><img src="assets/strip/s03.jpg" alt=""><img src="assets/strip/s04.jpg" alt=""><img src="assets/strip/s05.jpg" alt=""><img src="assets/strip/s06.jpg" alt=""><img src="assets/strip/s07.jpg" alt=""><img src="assets/strip/s08.jpg" alt=""><img src="assets/strip/s09.jpg" alt=""><img src="assets/strip/s10.jpg" alt=""><img src="assets/strip/s11.jpg" alt=""><img src="assets/strip/s12.jpg" alt="">
+      <img src="assets/strip/s01.jpg" alt=""><img src="assets/strip/s02.jpg" alt=""><img src="assets/strip/s03.jpg" alt=""><img src="assets/strip/s04.jpg" alt=""><img src="assets/strip/s05.jpg" alt=""><img src="assets/strip/s06.jpg" alt=""><img src="assets/strip/s07.jpg" alt=""><img src="assets/strip/s08.jpg" alt=""><img src="assets/strip/s09.jpg" alt=""><img src="assets/strip/s10.jpg" alt=""><img src="assets/strip/s11.jpg" alt=""><img src="assets/strip/s12.jpg" alt="">
+    </div>
+    <div class="perf"></div>
+  </div>
+</header>
 
-<section id="skill"><div class="wrap">
-  <span class="kick"><span class="n">1</span> One-line install</span>
-  <h2>The Claude Code skill &amp; command</h2>
-  <p>The fastest way — adds the <code>/tvl-extract</code> command and the
-     <code>tvl-youtube-extractor</code> skill to Claude Code. Paste this in your terminal:</p>
-  <pre class="hl"><span class="c"># clones to ~/.tvl-youtube-extractor and wires up the command + skill</span>
+<div class="wrap">
+
+  <section id="install" class="reveal">
+    <span class="kicker">Install</span>
+    <h2>Two ways in.</h2>
+    <div class="ways">
+      <div class="way"><div class="num">A</div><h3>The skill &amp; command</h3>
+        <p>One line — adds <code>/tvl-extract</code> and the skill to Claude Code.</p>
+        <pre><span class="c"># paste into your terminal</span>
 curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash</pre>
-  <p>Then, in any Claude Code session:</p>
-  <pre><span class="o">/tvl-extract</span> https://youtu.be/VIDEO_ID Romanian</pre>
-  <p class="muted">Or just ask Claude: <i>“summarize this YouTube video: &lt;url&gt;”</i> — the skill runs it for you.</p>
-</div></section>
+        <p style="margin-top:12px">Then: <code>/tvl-extract https://youtu.be/… Romanian</code></p>
+      </div>
+      <div class="way"><div class="num">B</div><h3>The full app</h3>
+        <p>Clone and run it locally — serves the UI + API at localhost:8000.</p>
+        <pre><span class="o">git clone</span> https://github.com/danlex/tvl-youtube-extractor.git
+<span class="o">cd</span> tvl-youtube-extractor &amp;&amp; <span class="o">./run.sh</span></pre>
+        <p style="margin-top:12px">Prereqs: <code>brew install yt-dlp ffmpeg</code> · Python 3.10+</p>
+      </div>
+    </div>
+  </section>
 
-<section id="prereq"><div class="wrap">
-  <span class="kick"><span class="n">2</span> Prerequisites</span>
-  <h2>What you need</h2>
-  <table>
-    <tr><th>Tool</th><th>Why</th></tr>
-    <tr><td><code>yt-dlp</code>, <code>ffmpeg</code>, <code>ffprobe</code></td><td>download the video, cut frames &amp; clips</td></tr>
-    <tr><td>Claude Code (logged in) <i>or</i> <code>ANTHROPIC_API_KEY</code></td><td>the agent that maps the story &amp; translates</td></tr>
-    <tr><td>Python 3.10+</td><td>the backend</td></tr>
-    <tr><td>Node 18+ <span class="muted">(optional)</span></td><td>only to build the web UI — not needed for the CLI/command</td></tr>
-  </table>
-  <pre><span class="c"># macOS</span>
-brew install yt-dlp ffmpeg</pre>
-  <p><b>Transcription needs no setup.</b> It uses the video's YouTube captions when present,
-     and falls back to <b>faster-whisper</b> (installed via pip, runs int8 on CPU) when there
-     are none. No whisper.cpp required.</p>
-</div></section>
+  <section id="use" class="reveal">
+    <span class="kicker">How to use it</span>
+    <h2>Get a summary in one step.</h2>
+    <div class="twocol">
+      <div>
+        <p class="sub" style="margin:0 0 16px">Every method takes one input — a YouTube link — and gives you a page with the
+          story timeline, frames, a clip per beat, and a bilingual transcript. Here's a real clip + the finished page:</p>
+        <video class="clip" src="assets/demo-clip.mp4" autoplay muted loop playsinline></video>
+      </div>
+      <a class="window" href="examples/riemann-hypothesis-ai.html">
+        <span class="bar"><i></i><i></i><i></i><span class="url">summary.html</span></span>
+        <img src="assets/example-shot.png" alt="A finished extracted page">
+      </a>
+    </div>
+    <div class="ways three" style="margin-top:28px">
+      <div class="way"><div class="num">Easiest</div><h3>Ask Claude</h3>
+        <ol><li>Open Claude Code.</li><li>Type <code>/tvl-extract &lt;link&gt; Romanian</code>.</li><li>It builds and opens the page.</li></ol>
+        <p style="margin:0;color:var(--muted);font-size:13.5px">Or just say “summarize this YouTube video: &lt;link&gt;”.</p>
+      </div>
+      <div class="way"><div class="num">Browser</div><h3>The web app</h3>
+        <ol><li><code>./run.sh</code> → open localhost:8000.</li><li>Paste a link, pick a language.</li><li>Click Extract, watch, download.</li></ol>
+      </div>
+      <div class="way"><div class="num">Terminal</div><h3>Headless CLI</h3>
+        <ol><li>Run <code>./extract.sh "&lt;link&gt;" --lang Romanian --open</code>.</li><li>It prints &amp; opens one <code>summary.html</code>.</li></ol>
+      </div>
+    </div>
+    <div class="note"><b>Any language.</b> Change the second argument — <code>French</code>,
+      <code>Spanish</code>, <code>German</code>, English… The English transcript is always kept beside the translation.</div>
+  </section>
 
-<section id="app"><div class="wrap">
-  <span class="kick"><span class="n">3</span> The full app</span>
-  <h2>Run it locally</h2>
-  <p>Clone the repo and start everything with one script — it builds the UI, sets up a
-     Python venv, installs deps, and serves the API + UI together.</p>
-  <pre><span class="c"># clone &amp; run</span>
-git clone https://github.com/danlex/tvl-youtube-extractor.git
-cd tvl-youtube-extractor
-<span class="o">./run.sh</span>        <span class="c"># → open http://localhost:8000</span></pre>
+  <section class="reveal">
+    <span class="kicker">Prerequisites</span>
+    <h2>What you need.</h2>
+    <table>
+      <tr><th>Tool</th><th>Why</th></tr>
+      <tr><td><code>yt-dlp</code>, <code>ffmpeg</code>, <code>ffprobe</code></td><td>download the video, cut frames &amp; clips</td></tr>
+      <tr><td><b>Claude Code</b>, logged in</td><td>the agent — uses your Claude <b>session</b>, <b>no API key</b></td></tr>
+      <tr><td>Python 3.10+</td><td>the backend</td></tr>
+      <tr><td>Node 18+ <span style="color:var(--muted)">(optional)</span></td><td>only to build the web UI — not needed for the CLI/command</td></tr>
+    </table>
+    <div class="note"><b>Transcription needs no setup.</b> It uses the video's YouTube captions when present,
+      and falls back to <b>faster-whisper</b> (installed via pip, int8 on CPU) when there are none. No whisper.cpp required.</div>
+  </section>
 
-  <h3 style="font-size:18px;margin:22px 0 4px">Headless CLI (no server)</h3>
-  <p class="muted">One shot straight to a self-contained <code>summary.html</code>:</p>
-  <pre><span class="o">./extract.sh</span> "https://youtu.be/VIDEO_ID" <span class="g">--lang</span> Romanian <span class="g">--open</span></pre>
+  <section class="reveal">
+    <span class="kicker">Configuration</span>
+    <h2>Optional <code>.env</code>.</h2>
+    <p class="sub">Copy <code>backend/.env.example</code> → <code>backend/.env</code>. Everything has a sane default — you don't need any of these.</p>
+    <table>
+      <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
+      <tr><td><code>TRANSCRIBE_PREFER</code></td><td><code>captions</code></td><td><code>captions</code> (YouTube subs first) or <code>asr</code></td></tr>
+      <tr><td><code>ASR_MODEL</code></td><td><code>base.en</code></td><td>faster-whisper model (<code>tiny.en</code>, <code>base.en</code>, …)</td></tr>
+      <tr><td><code>ANTHROPIC_API_KEY</code></td><td>— <span style="color:var(--muted)">(optional)</span></td><td>only if you'd rather use the API than your Claude session</td></tr>
+      <tr><td><code>RESEND_API_KEY</code> + <code>MAIL_FROM</code></td><td>—</td><td>email the result link (the <code>/api/submit</code> flow)</td></tr>
+    </table>
+  </section>
 
-  <h3 style="font-size:18px;margin:22px 0 4px">Development</h3>
-  <pre><span class="o">./dev.sh</span>        <span class="c"># FastAPI :8000 + Next.js dev :3000</span></pre>
-
-  <div class="note"><b>Self-hosting on a server?</b> YouTube blocks most datacenter IPs with a
-     bot-check, so <code>yt-dlp</code> downloads fail from typical cloud VMs. Run it locally,
-     or pass cookies / a proxy to yt-dlp (<code>--cookies</code>, <code>--proxy</code>).</div>
-</div></section>
-
-<section id="config"><div class="wrap">
-  <span class="kick"><span class="n">4</span> Configuration</span>
-  <h2>Optional <code>.env</code></h2>
-  <p>Copy <code>backend/.env.example</code> → <code>backend/.env</code>. Everything has a sane default.</p>
-  <table>
-    <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
-    <tr><td><code>ANTHROPIC_API_KEY</code></td><td>—</td><td>use the API instead of your <code>claude</code> session</td></tr>
-    <tr><td><code>TRANSCRIBE_PREFER</code></td><td><code>captions</code></td><td><code>captions</code> (YouTube subs first) or <code>asr</code></td></tr>
-    <tr><td><code>ASR_BACKEND</code></td><td><code>faster-whisper</code></td><td>or <code>whisper-cli</code></td></tr>
-    <tr><td><code>ASR_MODEL</code></td><td><code>base.en</code></td><td><code>tiny.en</code> / <code>base.en</code> / <code>small.en</code> …</td></tr>
-    <tr><td><code>RESEND_API_KEY</code> + <code>MAIL_FROM</code></td><td>—</td><td>email the result link (the <code>/api/submit</code> flow)</td></tr>
-  </table>
-</div></section>
-
-<section id="update"><div class="wrap">
-  <span class="kick"><span class="n">5</span> Updating</span>
-  <h2>Stay current</h2>
-  <ul>
-    <li><b>Skill &amp; command:</b> re-run the one-liner — it pulls the latest and re-wires everything.</li>
-    <li><b>The app:</b> <code>git pull</code> in the repo, then <code>./run.sh</code> (delete <code>frontend/out</code> to rebuild the UI).</li>
-  </ul>
-  <pre><span class="c"># update the skill/command</span>
+  <section class="reveal">
+    <span class="kicker">Updating</span>
+    <h2>Stay current.</h2>
+    <pre style="margin-top:24px"><span class="c"># update the skill &amp; command</span>
 curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash
 <span class="c"># update the app</span>
 cd tvl-youtube-extractor &amp;&amp; git pull &amp;&amp; ./run.sh</pre>
-</div></section>
+  </section>
+
+</div>
 
 <footer><div class="wrap">
-  TVL Academy · YouTube Extractor — <a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a> · <a href="./">back home</a>
+  <span class="brand"><img src="assets/tvl-academy-logo.svg" alt="">TVL Academy</span>
+  <span class="spacer"></span>
+  <a href="./">Home</a> &nbsp;·&nbsp; <a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a>
 </div></footer>
+
+<script>
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.1});
+  document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
+</script>
 </body>
 </html>
