@@ -14,7 +14,8 @@ def main():
     src = sys.argv[1]
     out = sys.argv[2]
     width = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 1280
-    full = "--viewport" not in sys.argv
+    sel = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--sel=")), None)
+    full = "--viewport" not in sys.argv and not sel
     url = src if "://" in src else "file://" + os.path.abspath(src)
     with sync_playwright() as p:
         b = p.chromium.launch()
@@ -28,8 +29,12 @@ def main():
             pg.evaluate(f"window.scrollTo(0,{y})")
             pg.wait_for_timeout(90)
             y += 600
-        pg.evaluate("window.scrollTo(0,0)")
-        pg.wait_for_timeout(350)
+        if sel:
+            pg.eval_on_selector(sel, "e => e.scrollIntoView({block:'center'})")
+            pg.wait_for_timeout(400)
+        else:
+            pg.evaluate("window.scrollTo(0,0)")
+            pg.wait_for_timeout(350)
         pg.screenshot(path=out, full_page=full)
         b.close()
     print(out)
