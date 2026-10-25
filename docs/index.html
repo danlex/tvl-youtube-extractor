@@ -112,8 +112,14 @@
   .reveal-prod .kicker { color:#ffb3a8; }
   .reveal-prod h2 { font-size: clamp(26px,3vw,40px); }
   .reveal-prod p { color:#c7bfb5; margin: 16px 0 22px; }
-  .metarow { display:flex; flex-wrap:wrap; gap: 10px 26px; margin: 0 0 26px; }
-  .metarow .m b { font-family:var(--display); font-size: 26px; color:#fff; } .metarow .m span { color:#9a9088; font-size:13px; margin-left:7px; }
+  .metarow { display:grid; grid-template-columns:repeat(4,1fr); margin: 6px 0 30px;
+    border-top:1px solid rgba(239,233,223,.14); border-bottom:1px solid rgba(239,233,223,.14); }
+  .metarow .m { display:flex; flex-direction:column; gap:3px; padding:16px 16px 15px;
+    border-right:1px solid rgba(239,233,223,.12); }
+  .metarow .m:last-child { border-right:none; }
+  .metarow .m b { font-family:var(--display); font-weight:800; font-size:clamp(26px,3vw,33px);
+    color:#fff; line-height:1; letter-spacing:-.02em; }
+  .metarow .m span { color:#9a9088; font-size:11px; letter-spacing:.12em; text-transform:uppercase; margin:0; }
   .window { border-radius: 12px 12px 0 0; overflow: hidden; border:1px solid rgba(0,0,0,.2); box-shadow: 0 -10px 60px -20px rgba(255,73,49,.3);
     background:#fff; transform: translateY(14px); }
   .window .bar { display:flex; align-items:center; gap:7px; padding: 11px 14px; background:#efe8df; border-bottom:1px solid var(--line); }
@@ -122,6 +128,40 @@
   .window .bar .url { margin-left:10px; font-family:var(--mono); font-size:12px; color:var(--muted); background:#fff;
     padding:4px 12px; border-radius:6px; border:1px solid var(--line); }
   .window img { display:block; width:100%; }
+  .reveal-prod .window { transition: transform .35s ease, box-shadow .35s ease; }
+  .reveal-prod .window:hover { transform: translateY(6px); box-shadow: 0 -16px 70px -22px rgba(255,73,49,.45); }
+
+  /* filmstrip interactions */
+  .filmstrip:hover .reel { animation-play-state: paused; }
+  .reel img { transition: transform .25s ease, filter .25s ease; }
+  .reel img:hover { transform: scale(1.07); filter: none; z-index: 3; position: relative; }
+
+  /* hero trust line */
+  .trust { display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:22px; color:#8e867d; font-size:13.5px; }
+  .trust span { display:inline-flex; align-items:center; gap:8px; }
+  .trust .d { width:5px; height:5px; border-radius:50%; background:var(--coral); }
+
+  /* signature story-map band */
+  .mapcard { background: var(--ink); color: var(--fg-night); border-radius: 28px; padding: 50px 50px 46px; position:relative; overflow:hidden; }
+  .mapcard::before { content:""; position:absolute; inset:0;
+    background: radial-gradient(640px 340px at 18% -10%, rgba(124,90,248,.16), transparent 60%),
+                radial-gradient(640px 340px at 92% 120%, rgba(255,73,49,.15), transparent 60%); }
+  .mapcard .inner { position:relative; }
+  .mapcard .kicker { color:#c9bcff; } .mapcard h2 { color:#fff; margin-bottom:8px; }
+  .mapcard .sub { color:#b4aca2; margin-bottom:30px; }
+  .timeline { position:relative; }
+  .tl-track { display:flex; height:58px; border-radius:12px; overflow:hidden;
+    clip-path: inset(0 100% 0 0); transition: clip-path 1.15s cubic-bezier(.2,.8,.2,1); }
+  .reveal.in .tl-track { clip-path: inset(0 0 0 0); }
+  .tl-seg { display:flex; align-items:center; justify-content:center; color:#fff; font-size:12.5px;
+    font-weight:700; letter-spacing:.01em; padding:0 10px; text-align:center; overflow:hidden; white-space:nowrap; }
+  .tl-ticks { position:relative; height:34px; margin-top:12px; }
+  .tl-dot { position:absolute; top:0; width:13px; height:13px; border-radius:50%; background:#fff;
+    border:2px solid var(--ink); transform: translateX(-50%) scale(.3); opacity:0;
+    transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+  .reveal.in .tl-dot { opacity:1; transform: translateX(-50%) scale(1); }
+  .tl-time { position:absolute; top:17px; font-size:11px; color:#8e867d; transform:translateX(-50%); }
+  .tl-time.end { left:auto; right:0; transform:none; }
 
   /* ways */
   .ways { display:grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 46px; }
@@ -164,7 +204,8 @@
     .reveal-prod { padding: 40px 26px 0; } .reveal-prod .inner { grid-template-columns:1fr; gap:28px; }
     .ways { grid-template-columns:1fr; } .way p{min-height:0} .twocol{grid-template-columns:1fr;gap:28px}
   }
-  @media (max-width: 560px){ .feat{grid-template-columns:1fr} .hero{padding-top:104px} }
+  @media (max-width: 560px){ .feat{grid-template-columns:1fr} .hero{padding-top:104px}
+    .metarow{grid-template-columns:repeat(2,1fr)} .mapcard{padding:32px 22px} .tl-seg{font-size:10px} }
   @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} .reel{animation:none} .reveal{opacity:1;transform:none} }
 </style>
 </head>
@@ -195,6 +236,12 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       <span class="cmd"><span class="c">❯</span> /tvl-extract <b>https://youtu.be/…</b></span>
     </div>
+    <div class="trust">
+      <span><span class="d"></span> Free &amp; open source</span>
+      <span><span class="d"></span> Runs locally</span>
+      <span><span class="d"></span> No API key</span>
+      <span><span class="d"></span> Any language</span>
+    </div>
   </div>
   <div class="filmstrip">
     <div class="perf"></div>
@@ -222,6 +269,35 @@
       <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></div>
         <h3>Bilingual transcript</h3><p>Full captions beside a translation in any language.</p></div>
     </div>
+  </section>
+
+  <section class="reveal">
+    <div class="mapcard"><div class="inner">
+      <span class="kicker">The idea</span>
+      <h2>Every video becomes a map.</h2>
+      <p class="sub">The agent splits the narrative into acts and beats — so you see the shape of a video before you watch a second of it.</p>
+      <div class="timeline">
+        <div class="tl-track">
+          <span class="tl-seg" style="flex:0 0 11.5%;background:#FF4931">Hook</span>
+          <span class="tl-seg" style="flex:0 0 17.1%;background:#0E9AA7">Setup</span>
+          <span class="tl-seg" style="flex:0 0 17.1%;background:#E0962B">The core</span>
+          <span class="tl-seg" style="flex:0 0 4.2%;background:#2E9E5B"></span>
+          <span class="tl-seg" style="flex:0 0 30.5%;background:#7A5AF8">Where the idea came from</span>
+          <span class="tl-seg" style="flex:0 0 19.6%;background:#5A6472">Close</span>
+        </div>
+        <div class="tl-ticks">
+          <span class="tl-dot" style="left:0%;transition-delay:.2s"></span>
+          <span class="tl-dot" style="left:11.5%;transition-delay:.32s"></span>
+          <span class="tl-dot" style="left:28.7%;transition-delay:.44s"></span>
+          <span class="tl-dot" style="left:45.8%;transition-delay:.56s"></span>
+          <span class="tl-dot" style="left:50%;transition-delay:.64s"></span>
+          <span class="tl-dot" style="left:80.4%;transition-delay:.76s"></span>
+          <span class="tl-dot" style="left:100%;transition-delay:.88s"></span>
+          <span class="tl-time" style="left:0">0:00</span>
+          <span class="tl-time end">8:05</span>
+        </div>
+      </div>
+    </div></div>
   </section>
 
   <section id="example" class="reveal">
