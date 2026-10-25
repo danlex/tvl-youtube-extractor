@@ -72,13 +72,15 @@ summary.html).
 
 ## Claude Code integration
 
-This repo ships a slash command and a skill (in `.claude/`). Install them for use in
-any Claude Code session:
+This repo ships a slash command and a skill (in `.claude/`). Install both with **one line**:
 
 ```bash
-cp .claude/commands/tvl-extract.md ~/.claude/commands/
-cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash
 ```
+
+It clones to `~/.tvl-youtube-extractor`, installs the skill, and wires up the command.
+(Manual: `cp .claude/commands/tvl-extract.md ~/.claude/commands/` and
+`cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/`, then set the path in the command.)
 
 - **`/tvl-extract <youtube-url> [language]`** — runs the headless extractor and
   reports the resulting `summary.html` (opens it too).

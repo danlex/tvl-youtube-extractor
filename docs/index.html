@@ -298,12 +298,12 @@
 
   <section class="reveal">
     <span class="kicker">Install</span>
-    <h2>Add it to Claude Code.</h2>
-    <pre><span class="c"># clone and install the command + skill (user scope)</span>
-git clone https://github.com/danlex/tvl-youtube-extractor.git
-cd tvl-youtube-extractor
-cp .claude/commands/tvl-extract.md ~/.claude/commands/
-cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/</pre>
+    <h2>One line. That's it.</h2>
+    <p class="sub" style="margin-bottom:22px">Installs the <code>/tvl-extract</code> command and the skill into Claude Code.</p>
+    <pre style="font-size:14px;border-color:var(--coral)"><span class="c"># paste into your terminal</span>
+curl -fsSL https://raw.githubusercontent.com/danlex/tvl-youtube-extractor/main/install.sh | bash</pre>
+    <p style="color:var(--muted);font-size:14px;margin-top:12px">Then, in a new Claude Code session:
+      <code>/tvl-extract https://youtu.be/… Romanian</code></p>
     <table>
       <tr><th>Tool</th><th>Why</th><th>Install (macOS)</th></tr>
       <tr><td><code>yt-dlp</code></td><td>download the video</td><td rowspan="3"><code>brew install yt-dlp ffmpeg whisper-cpp</code></td></tr>
