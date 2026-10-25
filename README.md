@@ -88,6 +88,10 @@ cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/
 
 Both use the logged-in `claude` session for the agent step, so no API key is required.
 
+**Shareable how-to page:** [`docs/how-to-use-the-skill.html`](docs/how-to-use-the-skill.html)
+(a self-contained page you can open or host) ·
+published version: https://claude.ai/code/artifact/86b81939-cf5c-4440-a6a1-1b007ec8c709
+
 ## Development
 
 ```bash

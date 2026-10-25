@@ -1,0 +1,163 @@
+<meta charset="utf-8" />
+<title>TVL YouTube Extractor — How to use the skill</title>
+<style>
+  :root {
+    --coral: #ff4931; --teal: #0e9aa7; --ink: #1c1b19; --cream: #f7f2e7;
+    --card: #fffdf7; --muted: #6b6459; --line: #e7ddc8; --code-bg: #15130f; --code-fg: #f3ead7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .page { max-width: 880px; margin: 0 auto; padding: 56px 22px 90px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--coral); font-weight: 800; margin: 0 0 14px; }
+  h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.04; letter-spacing: -0.02em;
+    margin: 0 0 16px; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--coral); }
+  .lede { font-size: 19px; color: #3a362f; max-width: 60ch; margin: 0 0 26px; }
+  .cmd { display: inline-flex; align-items: center; gap: 10px; background: var(--code-bg);
+    color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 15px; padding: 11px 16px; border-radius: 10px; }
+  .cmd b { color: #ffb3a8; font-weight: 600; }
+  .cmd .caret { color: var(--teal); }
+
+  h2 { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+    margin: 54px 0 18px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+
+  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .chip { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .chip .k { font-size: 22px; }
+  .chip h3 { margin: 8px 0 4px; font-size: 16px; }
+  .chip p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  .ways { display: grid; gap: 16px; }
+  .way { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--coral);
+    border-radius: 12px; padding: 18px 20px; }
+  .way:nth-child(2) { border-left-color: var(--teal); }
+  .way:nth-child(3) { border-left-color: #e0962b; }
+  .way h3 { margin: 0 0 4px; font-size: 19px; }
+  .way .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); }
+  .way p { margin: 8px 0 12px; color: #3a362f; font-size: 15px; }
+
+  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 14px 16px;
+    overflow-x: auto; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13.5px; line-height: 1.6; }
+  pre .c { color: #8c8575; }       /* comment */
+  pre .o { color: #ffb3a8; }       /* command / output accent */
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
+    background: #efe7d4; padding: 1px 6px; border-radius: 5px; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .flow .step { flex: 1 1 140px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; position: relative; }
+  .flow .step b { display: block; font-size: 13px; }
+  .flow .step span { font-size: 12.5px; color: var(--muted); }
+  .flow .step .n { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800;
+    color: var(--coral); }
+
+  .note { background: #fdf6ec; border: 1px solid #f0dcc0; border-left: 4px solid var(--teal);
+    border-radius: 0 10px 10px 0; padding: 14px 16px; font-size: 14.5px; color: #4a4036; }
+  .note b { color: var(--teal); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  td code { font-size: 13px; }
+
+  footer { margin-top: 58px; padding-top: 20px; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13px; }
+  a { color: var(--coral); }
+</style>
+
+<div class="page">
+  <p class="eyebrow">Claude Code · Skill &amp; Command</p>
+  <h1>Turn a YouTube video into a <em>story-timeline</em> page.</h1>
+  <p class="lede">
+    Paste a link. A Claude agent watches the whole transcript, maps it into a
+    narrative arc, pulls every frame and a short clip per beat, and writes the full
+    transcript with a translation — all into one self-contained HTML page.
+  </p>
+  <div class="cmd"><span class="caret">❯</span>&nbsp;/tvl-extract <b>https://youtu.be/…</b> Romanian</div>
+
+  <h2>What you get</h2>
+  <div class="chips">
+    <div class="chip"><div class="k">🗺️</div><h3>Story timeline</h3><p>A color-coded act/beat graph of the whole video.</p></div>
+    <div class="chip"><div class="k">🎞️</div><h3>Per-beat clips</h3><p>A short looping clip cut at each story beat.</p></div>
+    <div class="chip"><div class="k">🖼️</div><h3>Every frame</h3><p>A timestamped frame gallery, one every 5 seconds.</p></div>
+    <div class="chip"><div class="k">🌍</div><h3>Bilingual transcript</h3><p>The full captions next to a translation.</p></div>
+  </div>
+
+  <h2>Three ways to run it</h2>
+  <div class="ways">
+    <div class="way">
+      <span class="tag">In any Claude Code session</span>
+      <h3>1 · The slash command</h3>
+      <p>The quickest path. The command runs the extractor and opens the result.</p>
+      <pre><span class="o">/tvl-extract</span> https://youtu.be/dQw4w9WgXcQ Romanian</pre>
+    </div>
+    <div class="way">
+      <span class="tag">Terminal · no server</span>
+      <h3>2 · The headless CLI</h3>
+      <p>One shot straight to a <code>summary.html</code>. Prints the file path.</p>
+      <pre><span class="o">./extract.sh</span> "https://youtu.be/VIDEO_ID" --lang Romanian --open</pre>
+    </div>
+    <div class="way">
+      <span class="tag">Interactive · reusable</span>
+      <h3>3 · The web app</h3>
+      <p>A local page with live progress, an interactive timeline, and a download button.</p>
+      <pre><span class="o">./run.sh</span>   <span class="c"># then open http://localhost:8000</span></pre>
+    </div>
+  </div>
+
+  <h2>Just talk to Claude</h2>
+  <p>With the skill installed you don't even need the command. Say what you want and
+     Claude runs the tool:</p>
+  <pre><span class="c"># any of these trigger the tvl-youtube-extractor skill</span>
+“summarize this YouTube video: &lt;url&gt;”
+“break this video down into a story timeline”
+“get me the transcript of &lt;url&gt; with a Romanian translation”</pre>
+
+  <h2>Install the command &amp; skill</h2>
+  <pre><span class="c"># clone the repo</span>
+git clone https://github.com/danlex/tvl-youtube-extractor.git
+cd tvl-youtube-extractor
+
+<span class="c"># install the slash command + skill into Claude Code (user scope)</span>
+cp .claude/commands/tvl-extract.md ~/.claude/commands/
+cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/</pre>
+  <p style="margin-top:12px">Start a new Claude Code session and <code>/tvl-extract</code> and the skill are available everywhere.</p>
+
+  <h2>How it works</h2>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>yt-dlp</b><span>download the video</span></div>
+    <div class="step"><span class="n">2</span><b>ffmpeg</b><span>frames + a clip per beat</span></div>
+    <div class="step"><span class="n">3</span><b>whisper</b><span>transcribe → timed lines</span></div>
+    <div class="step"><span class="n">4</span><b>Claude agent</b><span>map the story, translate</span></div>
+    <div class="step"><span class="n">5</span><b>render</b><span>self-contained summary.html</span></div>
+  </div>
+
+  <h2>No API key — it uses your session</h2>
+  <p>The agent authenticates off your logged-in <code>claude</code> CLI session, so
+     there is nothing to configure. Each video costs roughly $0.10–0.25 per Claude
+     call (two per video) against your session. Set <code>ANTHROPIC_API_KEY</code> to
+     use the Anthropic API directly instead.</p>
+  <div class="note"><b>Tip</b> &nbsp;Change the translation language with the second
+     argument — <code>/tvl-extract &lt;url&gt; French</code>, <code>Spanish</code>,
+     <code>German</code>, and more.</div>
+
+  <h2>Requirements</h2>
+  <table>
+    <tr><th>Tool</th><th>Why</th><th>Install (macOS)</th></tr>
+    <tr><td><code>yt-dlp</code></td><td>download the video</td><td rowspan="3"><code>brew install yt-dlp ffmpeg whisper-cpp</code></td></tr>
+    <tr><td><code>ffmpeg</code> / <code>ffprobe</code></td><td>frames &amp; clips</td></tr>
+    <tr><td><code>whisper-cli</code> + a ggml model</td><td>transcription</td></tr>
+    <tr><td>Claude Code (logged in)</td><td>the agent (session auth)</td><td>—</td></tr>
+    <tr><td>Python 3.10+ · Node 18+</td><td>backend · web UI</td><td>—</td></tr>
+  </table>
+
+  <footer>
+    TVL YouTube Extractor · <a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a>
+    · a Claude Code skill + <code>/tvl-extract</code> command.
+  </footer>
+</div>
