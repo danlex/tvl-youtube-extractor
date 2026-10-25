@@ -1,0 +1,115 @@
+:root {
+  --coral: #ff4931;
+  --ink: #1c1b19;
+  --cream: #f7f2e7;
+  --card: #fffdf7;
+  --muted: #6b6459;
+  --line: #e7ddc8;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+a { color: var(--coral); }
+.wrap { max-width: 1020px; margin: 0 auto; padding: 32px 20px 90px; }
+
+/* hero / form */
+.hero { padding: 28px 0 10px; }
+.hero h1 { font-size: 34px; letter-spacing: -0.01em; margin: 0 0 6px; }
+.hero p { color: var(--muted); margin: 0 0 22px; max-width: 60ch; }
+.brand { color: var(--coral); }
+.form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.form input[type="text"] {
+  flex: 1 1 360px; min-width: 240px; font-size: 16px; padding: 13px 15px;
+  border: 1px solid var(--line); border-radius: 11px; background: var(--card); color: var(--ink);
+}
+.form input[type="text"]:focus { outline: 2px solid var(--coral); border-color: transparent; }
+.form select {
+  font-size: 15px; padding: 13px 12px; border: 1px solid var(--line);
+  border-radius: 11px; background: var(--card); color: var(--ink);
+}
+button.go {
+  font-size: 16px; font-weight: 700; padding: 13px 22px; border: none; cursor: pointer;
+  border-radius: 11px; background: var(--coral); color: #fff;
+}
+button.go:disabled { opacity: 0.5; cursor: default; }
+.err { margin-top: 14px; color: #b3261e; background: #fcebe9; border: 1px solid #f3c9c4;
+  padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+
+/* progress */
+.progress { margin: 30px 0; }
+.bar { height: 10px; background: var(--line); border-radius: 20px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--coral); transition: width 0.4s ease; }
+.progress .step { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.progress .step b { color: var(--ink); }
+
+/* result header */
+.head h2 { font-size: 28px; line-height: 1.15; margin: 8px 0 4px; }
+.head .ro { color: var(--muted); font-style: italic; font-size: 17px; margin: 0 0 6px; }
+.head .src { color: var(--muted); font-size: 13px; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 4px; }
+.toolbar a, .toolbar button {
+  font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  padding: 8px 14px; border-radius: 9px;
+}
+.stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 6px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; }
+.stat b { display: block; font-size: 19px; }
+
+h3.sec { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 44px 0 14px; }
+
+/* overview graph */
+.graph { margin: 10px 0 30px; }
+.track { display: flex; height: 46px; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); }
+.band { display: flex; align-items: center; justify-content: center; color: #fff;
+  font-size: 11px; font-weight: 700; text-align: center; padding: 0 4px; overflow: hidden; white-space: nowrap; }
+.ticks { position: relative; height: 30px; margin-top: 4px; }
+.dot { position: absolute; top: 0; transform: translateX(-50%); width: 13px; height: 13px;
+  border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+.dot span { position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; color: var(--muted); white-space: nowrap; }
+
+/* beats */
+.beat { display: grid; grid-template-columns: 70px 1fr; position: relative; }
+.rail { position: relative; }
+.rail::before { content: ""; position: absolute; left: 14px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.beat:last-child .rail::before { bottom: auto; height: 30px; }
+.node { position: absolute; left: 7px; top: 26px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--cream); z-index: 2; }
+.time { position: absolute; left: 34px; top: 24px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--coral);
+  border-radius: 12px; padding: 16px 18px; margin: 0 0 22px; }
+.tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; padding: 3px 8px; border-radius: 20px; color: #fff; }
+.card h4 { margin: 10px 0 2px; font-size: 19px; line-height: 1.25; }
+.card .ro-title { color: var(--muted); font-style: italic; font-size: 15px; margin: 0 0 10px; }
+.card .media { float: right; width: 260px; max-width: 44%; margin: 0 0 10px 16px;
+  border-radius: 9px; border: 1px solid var(--line); background: #0b0d12; aspect-ratio: 16/9; object-fit: cover; cursor: pointer; }
+.card .en { margin: 0 0 10px; }
+.card .roc { margin: 0; padding: 10px 12px; background: #fdf6ec; border-left: 3px solid var(--coral);
+  border-radius: 0 8px 8px 0; font-size: 14.5px; color: #55402f; }
+.card .roc b { color: var(--coral); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+.clear { clear: both; }
+
+/* gallery */
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.gallery figure { margin: 0; position: relative; }
+.gallery img { width: 100%; border-radius: 7px; border: 1px solid var(--line); display: block; }
+.gallery figcaption { position: absolute; left: 5px; bottom: 5px; background: rgba(0,0,0,0.6);
+  color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 4px; }
+
+/* captions */
+.caps { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.cap { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 14px; padding: 11px 14px; border-top: 1px solid var(--line); font-size: 14px; }
+.cap:first-child { border-top: none; }
+.cap .t { color: var(--muted); font-size: 12px; font-weight: 700; }
+.cap .rotext { color: #55402f; }
+.caps .hd { background: #f1e7d2; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+
+@media (max-width: 720px) {
+  .card .media { float: none; width: 100%; max-width: 100%; margin: 0 0 12px; }
+  .cap { grid-template-columns: 1fr; gap: 4px; }
+  .band { font-size: 9px; }
+}
