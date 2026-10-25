@@ -151,18 +151,14 @@ Both use the logged-in `claude` session for the agent step, so no API key is req
 | GET | `/api/jobs/{id}` | current status (`step`, `pct`, …) |
 | GET | `/api/jobs/{id}/stream` | Server-Sent Events progress |
 | GET | `/api/jobs/{id}/result` | the story JSON (acts, beats, captions, media URLs) |
-| GET | `/api/jobs/{id}/summary.html` | download the self-contained HTML |
-| POST | `/api/submit` | `{url, email, lang}` → generate, then email a `/view?h=<md5>` link |
-| GET | `/view?h=<md5>` | the generated page (or a self-refreshing "still cooking" page) |
+| GET | `/api/jobs/{id}/frames` | frames produced so far (lets the UI show it building) |
+| GET | `/api/jobs/{id}/summary.html` | the finished self-contained page |
 | GET | `/api/health` | `{ok, auth, model}` |
 
-### Email delivery (optional)
-
-`POST /api/submit` is a fire-and-forget mode: paste a URL + email, the job runs in
-the background, and the result link (`/view?h=<md5>`, md5 of videoId+email) is
-**emailed** when ready. Set `RESEND_API_KEY` + `MAIL_FROM` to actually send; without
-them the link is just logged. The product landing page for this lives at
-`backend/web/` and is served at `/`.
+The product landing (`backend/web/`, served at `/`) takes a URL, starts a job via
+`/api/extract`, streams progress from `/api/jobs/{id}/stream`, shows frames appearing
+from `/api/jobs/{id}/frames`, and embeds the finished page when it's done — all live,
+no email.
 
 ## Configuration
 
@@ -175,8 +171,6 @@ Set in `backend/.env` (see `backend/.env.example`):
 | `TRANSCRIBE_PREFER` | `captions` | `captions` (YouTube subs first) or `asr` |
 | `ASR_BACKEND` | `faster-whisper` | or `whisper-cli` |
 | `ASR_MODEL` | `base.en` | faster-whisper model (`tiny.en`, `base.en`, `small.en`, …) |
-| `RESEND_API_KEY` / `MAIL_FROM` | — | enable email delivery for `/api/submit` |
-| `BASE_URL` | `http://localhost:8000` | used to build the emailed `/view` link |
 
 ## Notes
 

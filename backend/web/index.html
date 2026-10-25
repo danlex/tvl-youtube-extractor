@@ -3,39 +3,56 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TVL YouTube Extractor — email me a video summary</title>
-<meta name="description" content="Paste a YouTube link and your email. We turn the video into a story-timeline page — frames, clips, and a bilingual transcript — and email you the link." />
+<title>TVL YouTube Extractor</title>
+<meta name="description" content="Paste a YouTube link and watch it become a story-timeline page — frames, clips, and a bilingual transcript — built live in your browser." />
 <link rel="icon" href="/tvl-academy-logo.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
-  :root{--coral:#ff4931;--coral-deep:#d83a24;--night:#121019;--fg:#efe9df;--muted:#9a9088;--line:#ffffff1c;
-    --disp:"Bricolage Grotesque",sans-serif;--sans:"Open Sans",system-ui,sans-serif}
+  :root{--coral:#ff4931;--coral-deep:#d83a24;--night:#121019;--card:#1b1824;--fg:#efe9df;--muted:#9a9088;--line:#ffffff1c;
+    --ok:#56c98a;--disp:"Bricolage Grotesque",sans-serif;--sans:"Open Sans",system-ui,sans-serif;--mono:ui-monospace,Menlo,monospace}
   *{box-sizing:border-box} body{margin:0;background:var(--night);color:var(--fg);font-family:var(--sans);min-height:100vh;
-    background-image:radial-gradient(1000px 520px at 82% -8%,rgba(255,73,49,.22),transparent 58%),radial-gradient(760px 480px at 4% 8%,rgba(124,90,248,.12),transparent 60%)}
-  a{color:inherit;text-decoration:none} .wrap{max-width:720px;margin:0 auto;padding:0 24px}
-  nav{display:flex;align-items:center;gap:11px;height:74px} nav img{height:28px} nav b{font-family:var(--disp);font-weight:800;font-size:18px} nav small{color:var(--muted);font-weight:600;font-size:12px;font-family:var(--sans)}
-  nav .sp{flex:1} nav a.gh{color:var(--muted);font-size:14px;font-weight:600}
-  .hero{padding:46px 0 70px}
-  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ffd9d1;background:rgba(255,73,49,.12);border:1px solid rgba(255,73,49,.3);padding:7px 13px;border-radius:999px;margin-bottom:22px}
+    background-image:radial-gradient(1000px 520px at 82% -8%,rgba(255,73,49,.2),transparent 58%),radial-gradient(760px 480px at 4% 8%,rgba(124,90,248,.12),transparent 60%)}
+  a{color:inherit;text-decoration:none} .wrap{max-width:900px;margin:0 auto;padding:0 24px}
+  nav{display:flex;align-items:center;gap:11px;height:72px} nav img{height:28px} nav b{font-family:var(--disp);font-weight:800;font-size:18px} nav small{color:var(--muted);font-weight:600;font-size:12px} nav .sp{flex:1} nav a.gh{color:var(--muted);font-size:14px;font-weight:600}
+  .hero{padding:40px 0 30px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ffd9d1;background:rgba(255,73,49,.12);border:1px solid rgba(255,73,49,.3);padding:7px 13px;border-radius:999px;margin-bottom:20px}
   .pill .d{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(255,73,49,.22)}
-  h1{font-family:var(--disp);font-weight:800;font-size:clamp(38px,7vw,68px);line-height:.98;letter-spacing:-.03em;margin:0}
-  h1 .hl{color:var(--coral)} p.lede{font-size:19px;color:#c7bfb5;max-width:46ch;margin:20px 0 32px}
-  form{display:flex;flex-direction:column;gap:12px;max-width:520px}
-  .row{display:flex;gap:12px} .row input{flex:1}
-  input,select{font:16px var(--sans);padding:15px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg)}
-  input::placeholder{color:#7d766d} input:focus,select:focus{outline:2px solid var(--coral);border-color:transparent}
-  button{font:700 16px var(--disp);letter-spacing:.01em;padding:15px 22px;border:none;border-radius:12px;background:var(--coral);color:#fff;cursor:pointer;transition:.18s}
-  button:hover{background:var(--coral-deep)} button:disabled{opacity:.55;cursor:default}
-  .note{color:var(--muted);font-size:13px;margin-top:4px}
-  .msg{margin-top:18px;padding:16px 18px;border-radius:12px;font-size:15px;display:none}
-  .msg.ok{display:block;background:rgba(46,158,91,.12);border:1px solid rgba(46,158,91,.4);color:#bfe8cf}
-  .msg.err{display:block;background:rgba(255,73,49,.1);border:1px solid rgba(255,73,49,.4);color:#ffc2b8}
-  .msg a{color:#ff9484;font-weight:600}
-  .feats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:40px;color:var(--muted);font-size:14px}
+  h1{font-family:var(--disp);font-weight:800;font-size:clamp(36px,6.5vw,62px);line-height:.98;letter-spacing:-.03em;margin:0}
+  h1 .hl{color:var(--coral)} p.lede{font-size:18px;color:#c7bfb5;max-width:48ch;margin:18px 0 26px}
+  form{display:flex;gap:12px;flex-wrap:wrap;max-width:620px}
+  input,select{font:16px var(--sans);padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg)}
+  #url{flex:1;min-width:240px} input::placeholder{color:#7d766d} input:focus,select:focus{outline:2px solid var(--coral);border-color:transparent}
+  button{font:700 16px var(--disp);padding:14px 24px;border:none;border-radius:12px;background:var(--coral);color:#fff;cursor:pointer;transition:.18s}
+  button:hover{background:var(--coral-deep)} button:disabled{opacity:.5;cursor:default}
+  .note{color:var(--muted);font-size:13px;margin-top:10px}
+  .err{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(255,73,49,.1);border:1px solid rgba(255,73,49,.4);color:#ffc2b8;display:none}
+  /* build panel */
+  .build{display:none;margin:30px 0 60px}
+  .barwrap{height:10px;background:rgba(255,255,255,.08);border-radius:20px;overflow:hidden}
+  .bar{height:100%;width:0;background:linear-gradient(90deg,var(--coral),#ff8a6e);transition:width .5s ease}
+  .step{margin-top:12px;color:#c7bfb5;font-size:14.5px} .step b{color:var(--fg)}
+  .stages{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .stg{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);padding:7px 12px;border-radius:999px}
+  .stg .dot{width:8px;height:8px;border-radius:50%;background:#4a4653}
+  .stg.active{color:var(--fg);border-color:var(--coral)} .stg.active .dot{background:var(--coral);animation:pulse 1s infinite}
+  .stg.done{color:var(--ok)} .stg.done .dot{background:var(--ok)}
+  @keyframes pulse{50%{opacity:.35}}
+  .live{margin-top:10px} .live h4{font-family:var(--disp);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+  .frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+  .frames img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px;border:1px solid var(--line);background:#0b0d12;animation:fin .4s ease}
+  @keyframes fin{from{opacity:0;transform:scale(.9)}to{opacity:1}}
+  /* result */
+  .result{display:none;margin:26px 0 60px}
+  .rbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px}
+  .rbar h3{font-family:var(--disp);font-weight:800;font-size:20px;margin:0;flex:1;min-width:0}
+  .rbar .ok{color:var(--ok);font-weight:700} .rbtn{font:700 14px var(--sans);padding:9px 16px;border-radius:10px;background:var(--coral);color:#fff;border:none;cursor:pointer}
+  .rbtn.o{background:transparent;border:1px solid var(--line);color:var(--fg)}
+  iframe{width:100%;height:72vh;border:1px solid var(--line);border-radius:14px;background:#f6f1ea}
+  .feats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:30px;color:var(--muted);font-size:14px}
   .feats span{display:inline-flex;align-items:center;gap:8px} .feats .d{width:5px;height:5px;border-radius:50%;background:var(--coral)}
-  footer{color:var(--muted);font-size:13px;padding:26px 0 40px}
+  footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 </style>
 </head>
 <body>
@@ -43,25 +60,21 @@
   <nav><img src="/tvl-academy-logo.svg" alt=""><b>TVL Academy</b> <small>YouTube Extractor</small><span class="sp"></span><a class="gh" href="https://github.com/danlex/tvl-youtube-extractor">GitHub</a></nav>
 
   <section class="hero">
-    <span class="pill"><span class="d"></span> Paste · we email you the page</span>
+    <span class="pill"><span class="d"></span> Paste · watch it build · get the page</span>
     <h1>Any video,<br><span class="hl">read in minutes.</span></h1>
-    <p class="lede">Drop a YouTube link and your email. We map the story, pull the frames and a clip per beat, and transcribe it — then email you the page.</p>
-
+    <p class="lede">Drop a YouTube link. We map the story, pull the frames and a clip per beat, and transcribe it — right here, live.</p>
     <form id="f">
       <input id="url" type="text" inputmode="url" placeholder="https://youtu.be/…" required />
-      <div class="row">
-        <input id="email" type="email" placeholder="you@email.com" required />
-        <select id="lang" title="translation language">
-          <option>Romanian</option><option>English</option><option>French</option>
-          <option>Spanish</option><option>German</option><option>Italian</option>
-        </select>
-      </div>
-      <button id="go" type="submit">Email me the page →</button>
-      <div class="note">Free. We only use your email to send this one link.</div>
+      <select id="lang" title="translation language">
+        <option>Romanian</option><option>English</option><option>French</option>
+        <option>Spanish</option><option>German</option><option>Italian</option>
+      </select>
+      <button id="go" type="submit">Extract →</button>
     </form>
-    <div id="msg" class="msg"></div>
+    <div class="note">Free · runs on your Claude session · no API key.</div>
+    <div id="err" class="err"></div>
 
-    <div class="feats">
+    <div class="feats" id="feats">
       <span><span class="d"></span> Story timeline</span>
       <span><span class="d"></span> A clip per beat</span>
       <span><span class="d"></span> Every frame</span>
@@ -69,27 +82,95 @@
     </div>
   </section>
 
+  <!-- live build -->
+  <section class="build" id="build">
+    <div class="barwrap"><div class="bar" id="bar"></div></div>
+    <div class="step" id="step"><b>Starting…</b></div>
+    <div class="stages" id="stages"></div>
+    <div class="live"><h4>Frames, as they're pulled</h4><div class="frames" id="frames"></div></div>
+  </section>
+
+  <!-- result -->
+  <section class="result" id="result">
+    <div class="rbar">
+      <h3 id="rtitle"><span class="ok">✓</span> Your page is ready</h3>
+      <a class="rbtn o" id="open" target="_blank">Open full page ↗</a>
+      <a class="rbtn" id="dl">Download</a>
+    </div>
+    <iframe id="frame" title="Your extracted page"></iframe>
+  </section>
+
   <footer>TVL Academy · YouTube Extractor — <a href="https://github.com/danlex/tvl-youtube-extractor" style="color:#ff9484">source</a></footer>
 </div>
 
 <script>
-  var f=document.getElementById("f"), go=document.getElementById("go"), msg=document.getElementById("msg");
-  f.addEventListener("submit", async function(e){
+  const $ = (id) => document.getElementById(id);
+  const STAGES = [["Download",20],["Frames",38],["Transcribe",55],["Map story",72],["Translate",84],["Clips",92],["Assemble",100]];
+
+  function drawStages(pct){
+    $("stages").innerHTML = STAGES.map(([label,at],i)=>{
+      const prev = i ? STAGES[i-1][1] : 0;
+      let cls = "stg";
+      if (pct >= at) cls += " done";
+      else if (pct >= prev) cls += " active";
+      return `<span class="${cls}"><span class="dot"></span>${label}</span>`;
+    }).join("");
+  }
+  function drawFrames(urls){
+    const el = $("frames");
+    if (urls.length === el.children.length) return;
+    el.innerHTML = urls.map(u=>`<img src="${u}" alt="">`).join("");
+  }
+
+  $("f").addEventListener("submit", async (e)=>{
     e.preventDefault();
-    var url=document.getElementById("url").value.trim(), email=document.getElementById("email").value.trim(), lang=document.getElementById("lang").value;
-    if(!url||!email) return;
-    go.disabled=true; go.textContent="Sending…"; msg.className="msg";
-    try{
-      var r=await fetch("/api/submit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url:url,email:email,lang:lang})});
-      var d=await r.json();
-      if(!r.ok) throw new Error(d.detail||"something went wrong");
-      msg.className="msg ok";
-      if(d.status==="ready"){ msg.innerHTML='That video was already done — <a href="'+d.view+'">open your page →</a> (we also emailed it).'; }
-      else { msg.innerHTML="On it. We'll email <b>"+email+"</b> when your page is ready (usually a few minutes). You can also bookmark <a href='"+d.view+"'>your link</a>."; }
-      f.reset();
-    }catch(err){ msg.className="msg err"; msg.textContent=err.message; }
-    go.disabled=false; go.textContent="Email me the page →";
+    const url = $("url").value.trim(), lang = $("lang").value;
+    if(!url) return;
+    $("go").disabled = true; $("go").textContent = "Working…";
+    $("err").style.display = "none"; $("feats").style.display = "none";
+    $("result").style.display = "none"; $("frames").innerHTML = "";
+    $("build").style.display = "block"; $("bar").style.width = "0"; drawStages(0);
+    $("step").innerHTML = "<b>Starting…</b>";
+
+    let id;
+    try {
+      const r = await fetch("/api/extract", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url,lang})});
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.detail || "could not start");
+      id = d.job_id;
+    } catch(err){ return fail(err.message); }
+
+    const framesTimer = setInterval(async ()=>{
+      try{ const r = await fetch(`/api/jobs/${id}/frames`); const d = await r.json(); drawFrames(d.frames||[]); }catch(e){}
+    }, 1500);
+
+    const es = new EventSource(`/api/jobs/${id}/stream`);
+    es.onmessage = (ev)=>{
+      const s = JSON.parse(ev.data);
+      $("bar").style.width = (s.pct||0) + "%";
+      $("step").innerHTML = `<b>${s.pct||0}%</b> — ${s.step||""}${s.title?` · ${s.title}`:""}`;
+      drawStages(s.pct||0);
+      if (s.status === "done"){ es.close(); clearInterval(framesTimer); done(id); }
+      if (s.status === "error"){ es.close(); clearInterval(framesTimer); fail(s.error || "extraction failed"); }
+    };
+    es.onerror = ()=>{ es.close(); clearInterval(framesTimer); fail("lost connection to the backend"); };
+
+    function fail(msg){
+      $("build").style.display = "none"; $("err").textContent = msg; $("err").style.display = "block";
+      $("go").disabled = false; $("go").textContent = "Extract →";
+    }
   });
+
+  async function done(id){
+    const sum = `/api/jobs/${id}/summary.html`;
+    try { const res = await fetch(`/api/jobs/${id}/result`); const meta = await res.json();
+      $("rtitle").innerHTML = `<span class="ok">✓</span> ${meta.title || "Your page is ready"}`; } catch(e){}
+    $("open").href = sum; $("dl").href = sum; $("dl").setAttribute("download","summary.html");
+    $("frame").src = sum;
+    $("build").style.display = "none"; $("result").style.display = "block";
+    $("go").disabled = false; $("go").textContent = "Extract another →";
+    $("result").scrollIntoView({behavior:"smooth", block:"start"});
+  }
 </script>
 </body>
 </html>
