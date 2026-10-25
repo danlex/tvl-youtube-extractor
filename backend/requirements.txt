@@ -1,3 +1,6 @@
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 anthropic>=0.49.0
+# speech-to-text fallback when a video has no YouTube captions
+# (CTranslate2 int8 CPU; light enough for a 1-vCPU box, RTF ~0.2-0.35 at base.en)
+faster-whisper>=1.0.0

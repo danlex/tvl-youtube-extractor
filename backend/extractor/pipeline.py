@@ -104,13 +104,37 @@ def data_uri(path):
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
-def transcribe(video, workdir, model="small.en"):
-    """Extract 16kHz mono audio and run whisper-cli; return normalized segments
-    [{text,start,end}] (start/end in seconds)."""
+def _extract_wav(video, workdir):
     wav = os.path.join(workdir, "audio.wav")
     if not os.path.exists(wav):
         sh(["ffmpeg", "-y", "-v", "error", "-i", video,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav])
+    return wav
+
+
+def transcribe_fw(video, workdir, model="base.en"):
+    """Transcribe with faster-whisper (CTranslate2, int8 CPU). We decode the 16kHz
+    mono wav to a numpy array ourselves so faster-whisper never touches PyAV (whose
+    version often clashes). Light enough for a 1-vCPU box (RTF ~0.2-0.35)."""
+    import wave as _wave
+    import numpy as np
+    from faster_whisper import WhisperModel
+    wav = _extract_wav(video, workdir)
+    wf = _wave.open(wav)
+    audio = (np.frombuffer(wf.readframes(wf.getnframes()), np.int16)
+             .astype(np.float32) / 32768.0)
+    threads = int(os.environ.get("ASR_THREADS", "0")) or None
+    m = WhisperModel(model, device="cpu", compute_type="int8",
+                     cpu_threads=threads or 0)
+    segs, _info = m.transcribe(audio, beam_size=1)
+    return [{"text": s.text.strip(), "start": float(s.start), "end": float(s.end)}
+            for s in segs]
+
+
+def transcribe(video, workdir, model="small.en"):
+    """Extract 16kHz mono audio and run whisper-cli; return normalized segments
+    [{text,start,end}] (start/end in seconds)."""
+    wav = _extract_wav(video, workdir)
     model_path = model if os.path.exists(model) else os.path.join(
         WHISPER_MODELS, f"ggml-{model}.bin")
     if not os.path.exists(model_path):
@@ -180,10 +204,29 @@ def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
     return _parse_vtt(os.path.join(outdir, cands[0]))
 
 
+def _asr(video, workdir):
+    """Run the configured speech-to-text backend. Returns (segments, source) or None.
+    ASR_BACKEND: faster-whisper (default) | whisper-cli. ASR_MODEL picks the model."""
+    backend = os.environ.get("ASR_BACKEND", "faster-whisper")
+    if backend == "faster-whisper":
+        try:
+            model = os.environ.get("ASR_MODEL", "base.en")
+            return transcribe_fw(video, workdir, model), f"faster-whisper:{model}"
+        except Exception as e:
+            print(f"[asr] faster-whisper failed: {e}")
+    if backend == "whisper-cli" or shutil.which("whisper-cli"):
+        try:
+            model = os.environ.get("WHISPER_MODEL", "small.en")
+            return transcribe(video, workdir, model), "whisper-cli"
+        except Exception as e:
+            print(f"[asr] whisper-cli failed: {e}")
+    return None
+
+
 def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="captions"):
     """Get a transcript the cheapest way that works. Returns (segments, source).
-    prefer='captions' tries YouTube subtitles first (droplet-friendly, no whisper);
-    falls back to whisper-cli only if it's installed. prefer='whisper' flips the order."""
+    prefer='captions' tries YouTube subtitles first (free, no CPU), then falls back
+    to real speech transcription (faster-whisper by default). prefer='asr' flips it."""
     def try_caps():
         try:
             return captions(url, workdir)
@@ -193,18 +236,16 @@ def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="cap
         segs = try_caps()
         if segs:
             return segs, "captions"
-    if shutil.which("whisper-cli"):
-        try:
-            return transcribe(video, workdir, whisper_model), "whisper"
-        except Exception:
-            pass
+    got = _asr(video, workdir)
+    if got:
+        return got
     if prefer != "captions":
         segs = try_caps()
         if segs:
             return segs, "captions"
     raise RuntimeError(
-        "no transcript: YouTube has no captions for this video and whisper-cli "
-        "is not installed")
+        "no transcript: no YouTube captions and no working speech-to-text backend "
+        "(install faster-whisper or whisper-cli)")
 
 
 def sentence_groups(segments):
