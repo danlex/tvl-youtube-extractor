@@ -3,173 +3,301 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TVL YouTube Extractor — How to use the skill</title>
-<meta name="description" content="Turn a YouTube video into a story-timeline HTML page with a Claude Code skill and the /tvl-extract command. Frames, per-beat clips, and a bilingual transcript." />
-<meta property="og:title" content="TVL YouTube Extractor — How to use the skill" />
+<title>TVL YouTube Extractor — a Claude Code skill</title>
+<meta name="description" content="Turn any YouTube video into a story-timeline page: a Claude agent maps the narrative, pulls frames and per-beat clips, and writes a bilingual transcript — one self-contained HTML file. A TVL Academy tool." />
+<meta property="og:title" content="TVL YouTube Extractor — a Claude Code skill" />
 <meta property="og:description" content="Paste a YouTube link; a Claude agent maps the story, pulls frames and clips, and writes a bilingual transcript into one HTML page." />
 <meta property="og:type" content="website" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="assets/tvl-academy-logo.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --coral: #ff4931; --teal: #0e9aa7; --ink: #1c1b19; --cream: #f7f2e7;
-    --card: #fffdf7; --muted: #6b6459; --line: #e7ddc8; --code-bg: #15130f; --code-fg: #f3ead7;
+    --coral: #ff4931; --coral-deep: #c83224; --ink: #15120f; --paper: #f6f1ea;
+    --paper-2: #fff2ef; --card: #ffffff; --line: #ece3d8; --muted: #6b6560;
+    --code-bg: #1a1613; --code-fg: #f4ead9; --radius: 16px;
+    --shadow: 0 1px 2px rgba(20,16,12,.04), 0 12px 30px -16px rgba(20,16,12,.18);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--cream); color: var(--ink);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  .page { max-width: 880px; margin: 0 auto; padding: 56px 22px 90px; }
-  .eyebrow { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--coral); font-weight: 800; margin: 0 0 14px; }
-  h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.04; letter-spacing: -0.02em;
-    margin: 0 0 16px; text-wrap: balance; }
-  h1 em { font-style: normal; color: var(--coral); }
-  .lede { font-size: 19px; color: #3a362f; max-width: 60ch; margin: 0 0 26px; }
-  .cmd { display: inline-flex; align-items: center; gap: 10px; background: var(--code-bg);
-    color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 15px; padding: 11px 16px; border-radius: 10px; }
-  .cmd b { color: #ffb3a8; font-weight: 600; }
-  .cmd .caret { color: var(--teal); }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  a { color: var(--coral-deep); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
 
-  h2 { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
-    margin: 54px 0 18px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(1.4) blur(10px);
+    background: rgba(246,241,234,.82); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; gap: 12px; height: 62px; }
+  nav .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.01em; }
+  nav .brand img { height: 26px; width: 26px; display: block; }
+  nav .brand .sub { color: var(--muted); font-weight: 600; }
+  nav .spacer { flex: 1; }
+  nav a.ghost { color: var(--ink); font-weight: 600; font-size: 14.5px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px;
+    padding: 9px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; }
+  .btn-coral { background: var(--coral); color: #fff; box-shadow: 0 6px 16px -8px var(--coral); }
+  .btn-coral:hover { background: var(--coral-deep); text-decoration: none; }
+  .btn-ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover { border-color: var(--coral); text-decoration: none; }
 
-  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-  .chip { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
-  .chip .k { font-size: 22px; }
-  .chip h3 { margin: 8px 0 4px; font-size: 16px; }
-  .chip p { margin: 0; font-size: 14px; color: var(--muted); }
+  /* hero */
+  header.hero { position: relative; overflow: hidden; }
+  header.hero::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(900px 420px at 86% -8%, rgba(255,73,49,.14), transparent 60%),
+                radial-gradient(700px 360px at -6% 0%, rgba(255,73,49,.07), transparent 55%);
+    pointer-events: none; }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px;
+    align-items: center; padding: 70px 24px 60px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--coral-deep);
+    background: var(--paper-2); border: 1px solid #f6d6cd; padding: 6px 12px; border-radius: 999px; margin: 0 0 20px; }
+  h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.03; letter-spacing: -.025em; margin: 0 0 18px; text-wrap: balance; }
+  h1 .hl { color: var(--coral); }
+  .lede { font-size: 19px; color: #46403a; max-width: 54ch; margin: 0 0 26px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+  .cmd { display: inline-flex; align-items: center; gap: 10px; background: var(--code-bg); color: var(--code-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14.5px; padding: 11px 16px; border-radius: 10px; }
+  .cmd b { color: #ffb3a8; font-weight: 600; } .cmd .caret { color: #6bd0c6; }
 
-  .ways { display: grid; gap: 16px; }
-  .way { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--coral);
-    border-radius: 12px; padding: 18px 20px; }
-  .way:nth-child(2) { border-left-color: var(--teal); }
-  .way:nth-child(3) { border-left-color: #e0962b; }
-  .way h3 { margin: 0 0 4px; font-size: 19px; }
-  .way .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--muted); }
-  .way p { margin: 8px 0 12px; color: #3a362f; font-size: 15px; }
+  /* hero preview card */
+  .preview { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; transform: rotate(.6deg); transition: transform .3s ease; }
+  .preview:hover { transform: rotate(0deg) translateY(-2px); }
+  .preview .thumb { display: block; position: relative; }
+  .preview .thumb img { width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover; background: #0d0f16; }
+  .preview .badge { position: absolute; top: 12px; left: 12px; background: var(--coral); color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; }
+  .preview .cap { padding: 14px 16px 16px; }
+  .preview .cap h4 { margin: 0 0 4px; font-size: 15.5px; }
+  .preview .cap p { margin: 0; font-size: 13px; color: var(--muted); }
 
-  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 14px 16px;
-    overflow-x: auto; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 13.5px; line-height: 1.6; }
-  pre .c { color: #8c8575; }
-  pre .o { color: #ffb3a8; }
-  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
-    background: #efe7d4; padding: 1px 6px; border-radius: 5px; }
+  /* stat strip */
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  .stats .wrap { display: flex; flex-wrap: wrap; gap: 28px; padding: 18px 24px; }
+  .stats .s b { font-size: 22px; font-weight: 800; color: var(--coral-deep); }
+  .stats .s span { color: var(--muted); font-size: 13.5px; margin-left: 8px; }
 
-  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
-  .flow .step { flex: 1 1 140px; background: var(--card); border: 1px solid var(--line);
-    border-radius: 10px; padding: 12px 14px; position: relative; }
-  .flow .step b { display: block; font-size: 13px; }
-  .flow .step span { font-size: 12.5px; color: var(--muted); }
-  .flow .step .n { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800;
-    color: var(--coral); }
+  section { padding: 56px 0; }
+  .kicker { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--coral-deep); margin: 0 0 10px; }
+  h2 { font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -.02em; margin: 0 0 26px; text-wrap: balance; }
 
-  .note { background: #fdf6ec; border: 1px solid #f0dcc0; border-left: 4px solid var(--teal);
-    border-radius: 0 10px 10px 0; padding: 14px 16px; font-size: 14.5px; color: #4a4036; }
-  .note b { color: var(--teal); }
+  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+  .chip { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .chip .k { font-size: 26px; } .chip h3 { margin: 10px 0 5px; font-size: 16.5px; } .chip p { margin: 0; font-size: 14px; color: var(--muted); }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  /* example feature */
+  .example { background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+    box-shadow: var(--shadow); display: grid; grid-template-columns: 1.1fr 1fr; }
+  .example .media { background: #0d0f16; } .example .media img { width: 100%; height: 100%; object-fit: cover; display: block; min-height: 260px; }
+  .example .body { padding: 30px 32px; }
+  .example .body h3 { font-size: 23px; margin: 6px 0 10px; letter-spacing: -.015em; }
+  .example .body p { color: #46403a; margin: 0 0 16px; }
+  .example .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; color: var(--muted); margin-bottom: 20px; }
+  .example .meta b { color: var(--ink); }
+
+  .ways { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+  .way { background: var(--card); border: 1px solid var(--line); border-top: 4px solid var(--coral);
+    border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+  .way:nth-child(2) { border-top-color: #0e9aa7; } .way:nth-child(3) { border-top-color: #e0962b; }
+  .way .tag { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .way h3 { margin: 6px 0 6px; font-size: 19px; } .way p { margin: 0 0 14px; color: #46403a; font-size: 14.5px; }
+
+  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 12px; padding: 15px 17px; overflow-x: auto;
+    margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.65; }
+  pre .c { color: #8c8575; } pre .o { color: #ffb3a8; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: #efe5d8; padding: 1px 6px; border-radius: 5px; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 10px; }
+  .flow .step { flex: 1 1 150px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; position: relative; box-shadow: var(--shadow); }
+  .flow .step b { display: block; font-size: 14px; } .flow .step span { font-size: 12.5px; color: var(--muted); }
+  .flow .step .n { position: absolute; top: 12px; right: 14px; font-size: 12px; font-weight: 800; color: var(--coral); }
+
+  .note { background: var(--paper-2); border: 1px solid #f3d7cf; border-left: 4px solid var(--coral); border-radius: 0 12px 12px 0; padding: 16px 18px; font-size: 14.5px; color: #4a4036; }
+  .note b { color: var(--coral-deep); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--paper-2); }
   td code { font-size: 13px; }
 
-  footer { margin-top: 58px; padding-top: 20px; border-top: 1px solid var(--line);
-    color: var(--muted); font-size: 13px; }
-  a { color: var(--coral); }
+  footer { background: var(--ink); color: #d8cfc6; padding: 40px 0; margin-top: 30px; }
+  footer .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  footer img { height: 30px; width: 30px; }
+  footer .spacer { flex: 1; } footer a { color: #ffb3a8; }
+  footer small { color: #938a81; }
+
+  @media (max-width: 860px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 32px; padding: 44px 24px 40px; }
+    .preview { transform: none; order: 2; }
+    .example { grid-template-columns: 1fr; } .example .media img { min-height: 200px; }
+    .ways { grid-template-columns: 1fr; }
+    nav a.ghost { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="page">
-  <p class="eyebrow">Claude Code · Skill &amp; Command</p>
-  <h1>Turn a YouTube video into a <em>story-timeline</em> page.</h1>
-  <p class="lede">
-    Paste a link. A Claude agent watches the whole transcript, maps it into a
-    narrative arc, pulls every frame and a short clip per beat, and writes the full
-    transcript with a translation — all into one self-contained HTML page.
-  </p>
-  <div class="cmd"><span class="caret">❯</span>&nbsp;/tvl-extract <b>https://youtu.be/…</b> Romanian</div>
 
-  <h2>What you get</h2>
-  <div class="chips">
-    <div class="chip"><div class="k">🗺️</div><h3>Story timeline</h3><p>A color-coded act/beat graph of the whole video.</p></div>
-    <div class="chip"><div class="k">🎞️</div><h3>Per-beat clips</h3><p>A short looping clip cut at each story beat.</p></div>
-    <div class="chip"><div class="k">🖼️</div><h3>Every frame</h3><p>A timestamped frame gallery, one every 5 seconds.</p></div>
-    <div class="chip"><div class="k">🌍</div><h3>Bilingual transcript</h3><p>The full captions next to a translation.</p></div>
+<nav>
+  <div class="wrap">
+    <span class="brand"><img src="assets/tvl-academy-logo.svg" alt="TVL Academy" />TVL&nbsp;Academy <span class="sub">· YouTube Extractor</span></span>
+    <span class="spacer"></span>
+    <a class="ghost" href="#how">How it works</a>
+    <a class="ghost" href="#example">Example</a>
+    <a class="btn btn-coral" href="https://github.com/danlex/tvl-youtube-extractor">View on GitHub</a>
   </div>
+</nav>
 
-  <h2>Three ways to run it</h2>
-  <div class="ways">
-    <div class="way">
-      <span class="tag">In any Claude Code session</span>
-      <h3>1 · The slash command</h3>
-      <p>The quickest path. The command runs the extractor and opens the result.</p>
-      <pre><span class="o">/tvl-extract</span> https://youtu.be/dQw4w9WgXcQ Romanian</pre>
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Claude Code · Skill &amp; command</span>
+      <h1>Turn any YouTube video into a <span class="hl">story&#8209;timeline</span> page.</h1>
+      <p class="lede">Paste a link. A Claude agent watches the whole transcript, maps it into a
+        narrative arc, pulls every frame and a clip per beat, and writes the full transcript
+        with a translation — all into one self-contained HTML page.</p>
+      <div class="cta">
+        <a class="btn btn-coral" href="#example">See a real example →</a>
+        <a class="btn btn-ghost" href="https://github.com/danlex/tvl-youtube-extractor">Get it on GitHub</a>
+      </div>
+      <div class="cmd"><span class="caret">❯</span> /tvl-extract <b>https://youtu.be/…</b> Romanian</div>
     </div>
-    <div class="way">
-      <span class="tag">Terminal · no server</span>
-      <h3>2 · The headless CLI</h3>
-      <p>One shot straight to a <code>summary.html</code>. Prints the file path.</p>
-      <pre><span class="o">./extract.sh</span> "https://youtu.be/VIDEO_ID" --lang Romanian --open</pre>
-    </div>
-    <div class="way">
-      <span class="tag">Interactive · reusable</span>
-      <h3>3 · The web app</h3>
-      <p>A local page with live progress, an interactive timeline, and a download button.</p>
-      <pre><span class="o">./run.sh</span>   <span class="c"># then open http://localhost:8000</span></pre>
-    </div>
+    <a class="preview" href="examples/riemann-hypothesis-ai.html">
+      <span class="thumb"><span class="badge">Extracted page</span>
+        <img src="assets/example-riemann.jpg" alt="Example extracted page" /></span>
+      <span class="cap"><h4>AI Proved a Piece of the Riemann Hypothesis</h4>
+        <p>8-minute video → 16 beats, 84 bilingual captions, 98 frames. Open it →</p></span>
+    </a>
   </div>
+</header>
 
-  <h2>Just talk to Claude</h2>
-  <p>With the skill installed you don't even need the command. Say what you want and
-     Claude runs the tool:</p>
-  <pre><span class="c"># any of these trigger the tvl-youtube-extractor skill</span>
+<div class="stats"><div class="wrap">
+  <span class="s"><b>1</b><span>paste → one HTML file</span></span>
+  <span class="s"><b>16</b><span>story beats mapped</span></span>
+  <span class="s"><b>84</b><span>bilingual caption lines</span></span>
+  <span class="s"><b>0</b><span>API keys (uses your session)</span></span>
+</div></div>
+
+<div class="wrap">
+
+  <section>
+    <p class="kicker">What you get</p>
+    <h2>One page that actually explains the video.</h2>
+    <div class="chips">
+      <div class="chip"><div class="k">🗺️</div><h3>Story timeline</h3><p>A color-coded act/beat graph of the whole narrative.</p></div>
+      <div class="chip"><div class="k">🎞️</div><h3>Per-beat clips</h3><p>A short looping clip cut at each story beat.</p></div>
+      <div class="chip"><div class="k">🖼️</div><h3>Every frame</h3><p>A timestamped gallery, one frame every 5 seconds.</p></div>
+      <div class="chip"><div class="k">🌍</div><h3>Bilingual transcript</h3><p>Full captions beside a translation in any language.</p></div>
+    </div>
+  </section>
+
+  <section id="example">
+    <p class="kicker">A real extraction</p>
+    <h2>See exactly what it produces.</h2>
+    <div class="example">
+      <a class="media" href="examples/riemann-hypothesis-ai.html"><img src="assets/example-riemann.jpg" alt="Riemann hypothesis video, extracted" /></a>
+      <div class="body">
+        <h3>AI Proved a Piece of the Riemann Hypothesis — What Actually Happened</h3>
+        <p>An 8-minute explainer, extracted end to end: the narrative mapped into six acts,
+           sixteen beats each with its own clip, the full English transcript, and a Romanian
+           translation — in a single self-contained file.</p>
+        <div class="meta">
+          <span><b>8:05</b> runtime</span><span><b>16</b> beats</span>
+          <span><b>84</b> caption lines</span><span><b>98</b> frames</span>
+        </div>
+        <div class="cta">
+          <a class="btn btn-coral" href="examples/riemann-hypothesis-ai.html">Open the extracted page →</a>
+          <a class="btn btn-ghost" href="https://youtu.be/dsBXYAwQieI">Source video</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Usage</p>
+    <h2>Three ways to run it.</h2>
+    <div class="ways">
+      <div class="way"><span class="tag">In any Claude Code session</span><h3>The slash command</h3>
+        <p>The quickest path — runs the extractor and opens the result.</p>
+        <pre><span class="o">/tvl-extract</span> https://youtu.be/ID Romanian</pre></div>
+      <div class="way"><span class="tag">Terminal · no server</span><h3>The headless CLI</h3>
+        <p>One shot straight to a <code>summary.html</code>; prints the path.</p>
+        <pre><span class="o">./extract.sh</span> "URL" --lang Romanian --open</pre></div>
+      <div class="way"><span class="tag">Interactive · reusable</span><h3>The web app</h3>
+        <p>Local page: live progress, interactive timeline, download.</p>
+        <pre><span class="o">./run.sh</span> <span class="c"># localhost:8000</span></pre></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Hands-free</p>
+    <h2>Or just ask Claude.</h2>
+    <p style="max-width:62ch;color:#46403a;margin:0 0 16px">With the skill installed you don't need the command — say what you want and Claude runs the tool:</p>
+    <pre><span class="c"># any of these trigger the tvl-youtube-extractor skill</span>
 “summarize this YouTube video: &lt;url&gt;”
 “break this video down into a story timeline”
 “get me the transcript of &lt;url&gt; with a Romanian translation”</pre>
+  </section>
 
-  <h2>Install the command &amp; skill</h2>
-  <pre><span class="c"># clone the repo</span>
+  <section>
+    <p class="kicker">Install</p>
+    <h2>Add the command &amp; skill to Claude Code.</h2>
+    <pre><span class="c"># clone the repo</span>
 git clone https://github.com/danlex/tvl-youtube-extractor.git
 cd tvl-youtube-extractor
 
-<span class="c"># install the slash command + skill into Claude Code (user scope)</span>
+<span class="c"># install the slash command + skill (user scope)</span>
 cp .claude/commands/tvl-extract.md ~/.claude/commands/
 cp -r .claude/skills/tvl-youtube-extractor ~/.claude/skills/</pre>
-  <p style="margin-top:12px">Start a new Claude Code session and <code>/tvl-extract</code> and the skill are available everywhere.</p>
+    <p style="margin-top:12px;color:#46403a">Start a new session and <code>/tvl-extract</code> plus the skill are available everywhere.</p>
+  </section>
 
-  <h2>How it works</h2>
-  <div class="flow">
-    <div class="step"><span class="n">1</span><b>yt-dlp</b><span>download the video</span></div>
-    <div class="step"><span class="n">2</span><b>ffmpeg</b><span>frames + a clip per beat</span></div>
-    <div class="step"><span class="n">3</span><b>whisper</b><span>transcribe → timed lines</span></div>
-    <div class="step"><span class="n">4</span><b>Claude agent</b><span>map the story, translate</span></div>
-    <div class="step"><span class="n">5</span><b>render</b><span>self-contained summary.html</span></div>
-  </div>
+  <section id="how">
+    <p class="kicker">Under the hood</p>
+    <h2>How it works.</h2>
+    <div class="flow">
+      <div class="step"><span class="n">1</span><b>yt-dlp</b><span>download the video</span></div>
+      <div class="step"><span class="n">2</span><b>ffmpeg</b><span>frames + a clip per beat</span></div>
+      <div class="step"><span class="n">3</span><b>whisper</b><span>transcribe → timed lines</span></div>
+      <div class="step"><span class="n">4</span><b>Claude agent</b><span>map the story, translate</span></div>
+      <div class="step"><span class="n">5</span><b>render</b><span>self-contained HTML</span></div>
+    </div>
+    <div class="note" style="margin-top:22px"><b>No API key.</b> &nbsp;The agent authenticates off your
+      logged-in <code>claude</code> session — nothing to configure. Set <code>ANTHROPIC_API_KEY</code>
+      to use the Anthropic API directly instead. Change the language with the second argument:
+      <code>French</code>, <code>Spanish</code>, <code>German</code>, and more.</div>
+  </section>
 
-  <h2>No API key — it uses your session</h2>
-  <p>The agent authenticates off your logged-in <code>claude</code> CLI session, so
-     there is nothing to configure. Each video costs roughly $0.10–0.25 per Claude
-     call (two per video) against your session. Set <code>ANTHROPIC_API_KEY</code> to
-     use the Anthropic API directly instead.</p>
-  <div class="note"><b>Tip</b> &nbsp;Change the translation language with the second
-     argument — <code>/tvl-extract &lt;url&gt; French</code>, <code>Spanish</code>,
-     <code>German</code>, and more.</div>
+  <section>
+    <p class="kicker">Requirements</p>
+    <h2>What you need.</h2>
+    <table>
+      <tr><th>Tool</th><th>Why</th><th>Install (macOS)</th></tr>
+      <tr><td><code>yt-dlp</code></td><td>download the video</td><td rowspan="3"><code>brew install yt-dlp ffmpeg whisper-cpp</code></td></tr>
+      <tr><td><code>ffmpeg</code> / <code>ffprobe</code></td><td>frames &amp; clips</td></tr>
+      <tr><td><code>whisper-cli</code> + a ggml model</td><td>transcription</td></tr>
+      <tr><td>Claude Code (logged in)</td><td>the agent (session auth)</td><td>—</td></tr>
+      <tr><td>Python 3.10+ · Node 18+</td><td>backend · web UI</td><td>—</td></tr>
+    </table>
+  </section>
 
-  <h2>Requirements</h2>
-  <table>
-    <tr><th>Tool</th><th>Why</th><th>Install (macOS)</th></tr>
-    <tr><td><code>yt-dlp</code></td><td>download the video</td><td rowspan="3"><code>brew install yt-dlp ffmpeg whisper-cpp</code></td></tr>
-    <tr><td><code>ffmpeg</code> / <code>ffprobe</code></td><td>frames &amp; clips</td></tr>
-    <tr><td><code>whisper-cli</code> + a ggml model</td><td>transcription</td></tr>
-    <tr><td>Claude Code (logged in)</td><td>the agent (session auth)</td><td>—</td></tr>
-    <tr><td>Python 3.10+ · Node 18+</td><td>backend · web UI</td><td>—</td></tr>
-  </table>
-
-  <footer>
-    TVL YouTube Extractor · <a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a>
-    · a Claude Code skill + <code>/tvl-extract</code> command.
-  </footer>
 </div>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/tvl-academy-logo.svg" alt="TVL Academy" />
+    <div><b>TVL Academy</b> · YouTube Extractor<br>
+      <small>A Claude Code skill + <code style="background:#2a241f;color:#f4ead9">/tvl-extract</code> command.</small></div>
+    <span class="spacer"></span>
+    <a href="https://github.com/danlex/tvl-youtube-extractor">github.com/danlex/tvl-youtube-extractor</a>
+  </div>
+</footer>
+
 </body>
 </html>
