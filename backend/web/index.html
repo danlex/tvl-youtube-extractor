@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TVL YouTube Extractor — email me a video summary</title>
+<meta name="description" content="Paste a YouTube link and your email. We turn the video into a story-timeline page — frames, clips, and a bilingual transcript — and email you the link." />
+<link rel="icon" href="/tvl-academy-logo.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--coral:#ff4931;--coral-deep:#d83a24;--night:#121019;--fg:#efe9df;--muted:#9a9088;--line:#ffffff1c;
+    --disp:"Bricolage Grotesque",sans-serif;--sans:"Open Sans",system-ui,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--night);color:var(--fg);font-family:var(--sans);min-height:100vh;
+    background-image:radial-gradient(1000px 520px at 82% -8%,rgba(255,73,49,.22),transparent 58%),radial-gradient(760px 480px at 4% 8%,rgba(124,90,248,.12),transparent 60%)}
+  a{color:inherit;text-decoration:none} .wrap{max-width:720px;margin:0 auto;padding:0 24px}
+  nav{display:flex;align-items:center;gap:11px;height:74px} nav img{height:28px} nav b{font-family:var(--disp);font-weight:800;font-size:18px} nav small{color:var(--muted);font-weight:600;font-size:12px;font-family:var(--sans)}
+  nav .sp{flex:1} nav a.gh{color:var(--muted);font-size:14px;font-weight:600}
+  .hero{padding:46px 0 70px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ffd9d1;background:rgba(255,73,49,.12);border:1px solid rgba(255,73,49,.3);padding:7px 13px;border-radius:999px;margin-bottom:22px}
+  .pill .d{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(255,73,49,.22)}
+  h1{font-family:var(--disp);font-weight:800;font-size:clamp(38px,7vw,68px);line-height:.98;letter-spacing:-.03em;margin:0}
+  h1 .hl{color:var(--coral)} p.lede{font-size:19px;color:#c7bfb5;max-width:46ch;margin:20px 0 32px}
+  form{display:flex;flex-direction:column;gap:12px;max-width:520px}
+  .row{display:flex;gap:12px} .row input{flex:1}
+  input,select{font:16px var(--sans);padding:15px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg)}
+  input::placeholder{color:#7d766d} input:focus,select:focus{outline:2px solid var(--coral);border-color:transparent}
+  button{font:700 16px var(--disp);letter-spacing:.01em;padding:15px 22px;border:none;border-radius:12px;background:var(--coral);color:#fff;cursor:pointer;transition:.18s}
+  button:hover{background:var(--coral-deep)} button:disabled{opacity:.55;cursor:default}
+  .note{color:var(--muted);font-size:13px;margin-top:4px}
+  .msg{margin-top:18px;padding:16px 18px;border-radius:12px;font-size:15px;display:none}
+  .msg.ok{display:block;background:rgba(46,158,91,.12);border:1px solid rgba(46,158,91,.4);color:#bfe8cf}
+  .msg.err{display:block;background:rgba(255,73,49,.1);border:1px solid rgba(255,73,49,.4);color:#ffc2b8}
+  .msg a{color:#ff9484;font-weight:600}
+  .feats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:40px;color:var(--muted);font-size:14px}
+  .feats span{display:inline-flex;align-items:center;gap:8px} .feats .d{width:5px;height:5px;border-radius:50%;background:var(--coral)}
+  footer{color:var(--muted);font-size:13px;padding:26px 0 40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><img src="/tvl-academy-logo.svg" alt=""><b>TVL Academy</b> <small>YouTube Extractor</small><span class="sp"></span><a class="gh" href="https://github.com/danlex/tvl-youtube-extractor">GitHub</a></nav>
+
+  <section class="hero">
+    <span class="pill"><span class="d"></span> Paste · we email you the page</span>
+    <h1>Any video,<br><span class="hl">read in minutes.</span></h1>
+    <p class="lede">Drop a YouTube link and your email. We map the story, pull the frames and a clip per beat, and transcribe it — then email you the page.</p>
+
+    <form id="f">
+      <input id="url" type="text" inputmode="url" placeholder="https://youtu.be/…" required />
+      <div class="row">
+        <input id="email" type="email" placeholder="you@email.com" required />
+        <select id="lang" title="translation language">
+          <option>Romanian</option><option>English</option><option>French</option>
+          <option>Spanish</option><option>German</option><option>Italian</option>
+        </select>
+      </div>
+      <button id="go" type="submit">Email me the page →</button>
+      <div class="note">Free. We only use your email to send this one link.</div>
+    </form>
+    <div id="msg" class="msg"></div>
+
+    <div class="feats">
+      <span><span class="d"></span> Story timeline</span>
+      <span><span class="d"></span> A clip per beat</span>
+      <span><span class="d"></span> Every frame</span>
+      <span><span class="d"></span> Bilingual transcript</span>
+    </div>
+  </section>
+
+  <footer>TVL Academy · YouTube Extractor — <a href="https://github.com/danlex/tvl-youtube-extractor" style="color:#ff9484">source</a></footer>
+</div>
+
+<script>
+  var f=document.getElementById("f"), go=document.getElementById("go"), msg=document.getElementById("msg");
+  f.addEventListener("submit", async function(e){
+    e.preventDefault();
+    var url=document.getElementById("url").value.trim(), email=document.getElementById("email").value.trim(), lang=document.getElementById("lang").value;
+    if(!url||!email) return;
+    go.disabled=true; go.textContent="Sending…"; msg.className="msg";
+    try{
+      var r=await fetch("/api/submit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url:url,email:email,lang:lang})});
+      var d=await r.json();
+      if(!r.ok) throw new Error(d.detail||"something went wrong");
+      msg.className="msg ok";
+      if(d.status==="ready"){ msg.innerHTML='That video was already done — <a href="'+d.view+'">open your page →</a> (we also emailed it).'; }
+      else { msg.innerHTML="On it. We'll email <b>"+email+"</b> when your page is ready (usually a few minutes). You can also bookmark <a href='"+d.view+"'>your link</a>."; }
+      f.reset();
+    }catch(err){ msg.className="msg err"; msg.textContent=err.message; }
+    go.disabled=false; go.textContent="Email me the page →";
+  });
+</script>
+</body>
+</html>
