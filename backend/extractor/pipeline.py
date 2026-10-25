@@ -5,9 +5,11 @@ Whisper model: a ggml model file (default small.en) under WHISPER_MODELS.
 """
 import base64
 import glob
+import html
 import json
 import os
 import re
+import shutil
 import subprocess
 
 WHISPER_MODELS = os.environ.get(
@@ -124,6 +126,85 @@ def transcribe(video, workdir, model="small.en"):
                      "end": off.get("to", 0) / 1000.0})
     json.dump(segs, open(prefix + ".json", "w"), indent=2)
     return segs
+
+
+_VTT_TC = re.compile(
+    r"(\d\d):(\d\d):(\d\d)[.,](\d\d\d)\s*-->\s*(\d\d):(\d\d):(\d\d)[.,](\d\d\d)")
+
+
+def _parse_vtt(path):
+    """Parse a WebVTT subtitle file into [{text,start,end}] (seconds), collapsing
+    the rolling duplicates that YouTube auto-captions emit."""
+    def secs(h_, m_, s_, ms_):
+        return int(h_) * 3600 + int(m_) * 60 + int(s_) + int(ms_) / 1000.0
+    segs = []
+    with open(path, encoding="utf-8", errors="ignore") as f:
+        raw = f.read()
+    for block in raw.split("\n\n"):
+        m = _VTT_TC.search(block)
+        if not m:
+            continue
+        st, en = secs(*m.group(1, 2, 3, 4)), secs(*m.group(5, 6, 7, 8))
+        lines = [ln for ln in block.splitlines()
+                 if "-->" not in ln and ln.strip() and not ln.strip().isdigit()
+                 and not ln.startswith("WEBVTT")]
+        txt = re.sub(r"<[^>]+>", "", html.unescape(" ".join(lines))).strip()
+        txt = re.sub(r"\s+", " ", txt)
+        if txt:
+            segs.append({"text": txt, "start": st, "end": en})
+    out = []
+    for s in segs:
+        if out and (out[-1]["text"] == s["text"] or s["text"].startswith(out[-1]["text"])):
+            out[-1] = {"text": s["text"], "start": out[-1]["start"], "end": s["end"]}
+        else:
+            out.append(s)
+    return out
+
+
+def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
+    """Fetch YouTube subtitles (manual first, then auto) via yt-dlp — no whisper,
+    no audio decode. Returns [{text,start,end}] or [] if none exist."""
+    vid = yt_id(url)
+    subprocess.run(
+        ["yt-dlp", "--write-subs", "--write-auto-subs", "--sub-langs", sub_langs,
+         "--skip-download", "--sub-format", "vtt",
+         "-o", os.path.join(outdir, "%(id)s.%(ext)s"),
+         f"https://www.youtube.com/watch?v={vid}"],
+        capture_output=True, text=True)
+    cands = [f for f in os.listdir(outdir)
+             if f.startswith(vid + ".") and f.endswith(".vtt")]
+    if not cands:
+        return []
+    # prefer a manual track (no ".auto" / "-auto" marker) and a shorter lang tag
+    cands.sort(key=lambda f: ("auto" in f.lower(), len(f)))
+    return _parse_vtt(os.path.join(outdir, cands[0]))
+
+
+def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="captions"):
+    """Get a transcript the cheapest way that works. Returns (segments, source).
+    prefer='captions' tries YouTube subtitles first (droplet-friendly, no whisper);
+    falls back to whisper-cli only if it's installed. prefer='whisper' flips the order."""
+    def try_caps():
+        try:
+            return captions(url, workdir)
+        except Exception:
+            return []
+    if prefer == "captions":
+        segs = try_caps()
+        if segs:
+            return segs, "captions"
+    if shutil.which("whisper-cli"):
+        try:
+            return transcribe(video, workdir, whisper_model), "whisper"
+        except Exception:
+            pass
+    if prefer != "captions":
+        segs = try_caps()
+        if segs:
+            return segs, "captions"
+    raise RuntimeError(
+        "no transcript: YouTube has no captions for this video and whisper-cli "
+        "is not installed")
 
 
 def sentence_groups(segments):

@@ -64,9 +64,12 @@ def extract(job_id, url, lang, outdir, progress=None):
     frames = pipeline.extract_frames(video, os.path.join(outdir, "frames"),
                                      every=5, width=640)
 
-    p(step="Transcribing audio", pct=55)
-    segments = pipeline.transcribe(video, outdir,
-                                   model=os.environ.get("WHISPER_MODEL", "small.en"))
+    p(step="Transcribing", pct=55)
+    segments, tsource = pipeline.transcribe_source(
+        video, url, outdir,
+        whisper_model=os.environ.get("WHISPER_MODEL", "small.en"),
+        prefer=os.environ.get("TRANSCRIBE_PREFER", "captions"))
+    p(step=f"Transcript via {tsource}", pct=60)
     groups = pipeline.sentence_groups(segments)
 
     p(step="Claude is mapping the story", pct=72)
