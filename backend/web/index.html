@@ -43,6 +43,19 @@
   .frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
   .frames img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px;border:1px solid var(--line);background:#0b0d12;animation:fin .4s ease}
   @keyframes fin{from{opacity:0;transform:scale(.9)}to{opacity:1}}
+  .timer{color:var(--muted);font-size:13px;margin-top:8px;font-family:var(--mono)}
+  /* live story */
+  .story{display:none;margin-top:18px}
+  .story h3{font-family:var(--disp);font-weight:800;font-size:20px;margin:14px 0 2px}
+  .story .ro{color:var(--muted);font-style:italic;font-size:14px;margin:0 0 12px}
+  .tl{display:flex;height:40px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+  .tl .seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;transition:flex-basis .6s ease}
+  .beats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:12px}
+  .beat{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--coral);border-radius:10px;padding:10px 12px;animation:fin .4s ease both;transition:.15s}
+  .beat:hover{transform:translateY(-2px);border-color:#5a5668}
+  .beat .t{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .beat .ti{font-weight:700;font-size:13.5px;margin:3px 0 2px;line-height:1.25}
+  .beat .tt{color:var(--muted);font-size:12.5px;line-height:1.3}
   /* result */
   .result{display:none;margin:26px 0 60px}
   .rbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px}
@@ -86,7 +99,13 @@
   <section class="build" id="build">
     <div class="barwrap"><div class="bar" id="bar"></div></div>
     <div class="step" id="step"><b>Starting…</b></div>
+    <div class="timer" id="timer"></div>
     <div class="stages" id="stages"></div>
+    <div class="story" id="story">
+      <h3 id="st"></h3><div class="ro" id="srt"></div>
+      <div class="tl" id="tl"></div>
+      <div class="beats" id="beats"></div>
+    </div>
     <div class="live"><h4>Frames, as they're pulled</h4><div class="frames" id="frames"></div></div>
   </section>
 
@@ -106,6 +125,37 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const STAGES = [["Download",20],["Frames",38],["Transcribe",55],["Map story",72],["Translate",84],["Clips",92],["Assemble",100]];
+  const esc = (x) => (x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  const mmss = (s) => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+
+  let dur = 0, t0 = 0, timer = null;
+  function startTimer(){ t0 = Date.now(); clearInterval(timer); timer = setInterval(()=>{
+    const el = Math.floor((Date.now()-t0)/1000);
+    let txt = `⏱ ${mmss(el)} elapsed`;
+    if (dur){ const est = Math.round(25 + dur*0.4); txt += ` · ~${mmss(est)} estimated`; }
+    $("timer").textContent = txt;
+  }, 1000); }
+
+  function renderStory(s){
+    if(!s || !s.beats) return;
+    $("story").style.display = "block";
+    $("st").textContent = s.title || "";
+    $("srt").textContent = s.title_t || "";
+    const total = s.duration || (s.beats.length ? s.beats[s.beats.length-1].t + 10 : 1);
+    const seq = [];
+    s.beats.forEach(b => { if(!seq.length || seq[seq.length-1].act !== b.act)
+      seq.push({act:b.act, t:b.t, color:b.color, label:((s.acts.find(a=>a.key===b.act)||{}).label)||b.act}); });
+    $("tl").innerHTML = seq.map((g,i)=>{ const en = i+1<seq.length ? seq[i+1].t : total;
+      const w = Math.max(0,(en-g.t)/total*100);
+      return `<div class="seg" style="flex:0 0 ${w.toFixed(2)}%;background:${g.color}">${esc(g.label)}</div>`; }).join("");
+    const el = $("beats");
+    if (el.children.length !== s.beats.length){
+      el.innerHTML = s.beats.map((b,i)=>`<div class="beat" style="border-left-color:${b.color};animation-delay:${i*45}ms">
+        <div class="t">${b.mmss}</div><div class="ti">${esc(b.title)}</div><div class="tt" data-i="${i}">${esc(b.title_t)}</div></div>`).join("");
+    } else {
+      s.beats.forEach((b,i)=>{ const tt = el.querySelector(`.tt[data-i="${i}"]`); if(tt && b.title_t) tt.textContent = b.title_t; });
+    }
+  }
 
   function drawStages(pct){
     $("stages").innerHTML = STAGES.map(([label,at],i)=>{
@@ -129,8 +179,9 @@
     $("go").disabled = true; $("go").textContent = "Working…";
     $("err").style.display = "none"; $("feats").style.display = "none";
     $("result").style.display = "none"; $("frames").innerHTML = "";
+    $("story").style.display = "none"; $("beats").innerHTML = ""; $("tl").innerHTML = "";
     $("build").style.display = "block"; $("bar").style.width = "0"; drawStages(0);
-    $("step").innerHTML = "<b>Starting…</b>";
+    $("step").innerHTML = "<b>Starting…</b>"; dur = 0; startTimer();
 
     let id;
     try {
@@ -148,14 +199,17 @@
     es.onmessage = (ev)=>{
       const s = JSON.parse(ev.data);
       $("bar").style.width = (s.pct||0) + "%";
-      $("step").innerHTML = `<b>${s.pct||0}%</b> — ${s.step||""}${s.title?` · ${s.title}`:""}`;
+      $("step").innerHTML = `<b>${s.pct||0}%</b> — ${s.step||""}`;
       drawStages(s.pct||0);
-      if (s.status === "done"){ es.close(); clearInterval(framesTimer); done(id); }
+      if (s.duration) dur = s.duration;
+      if (s.story) renderStory(s.story);
+      if (s.status === "done"){ es.close(); clearInterval(framesTimer); clearInterval(timer); done(id); }
       if (s.status === "error"){ es.close(); clearInterval(framesTimer); fail(s.error || "extraction failed"); }
     };
     es.onerror = ()=>{ es.close(); clearInterval(framesTimer); fail("lost connection to the backend"); };
 
     function fail(msg){
+      clearInterval(timer);
       $("build").style.display = "none"; $("err").textContent = msg; $("err").style.display = "block";
       $("go").disabled = false; $("go").textContent = "Extract →";
     }

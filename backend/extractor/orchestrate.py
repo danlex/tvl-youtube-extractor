@@ -9,6 +9,24 @@ import os
 from . import agent, pipeline, render
 
 
+def _story_payload(story, tr, duration):
+    """A compact story for the live build view (acts + beats with colors)."""
+    color = {a["key"]: render.PALETTE[i % len(render.PALETTE)]
+             for i, a in enumerate(story["acts"])}
+    tb = (tr or {}).get("beats", [])
+    return {
+        "title": story["title"], "title_t": (tr or {}).get("title", ""),
+        "duration": duration,
+        "acts": [{"key": a["key"], "label": a["label"], "color": color[a["key"]]}
+                 for a in story["acts"]],
+        "beats": [{
+            "t": b["t"], "mmss": pipeline.mmss(b["t"]), "act": b["act"],
+            "color": color.get(b["act"], "#999"), "title": b["title"],
+            "title_t": (tb[i].get("title", "") if i < len(tb) else ""),
+        } for i, b in enumerate(story["beats"])],
+    }
+
+
 def _captions(groups, tr):
     rot = {round(c["start"], 1): c["text"] for c in tr.get("captions", [])}
     return [(s, en, rot.get(round(s, 1), "")) for s, _d, en in groups]
@@ -59,6 +77,7 @@ def extract(job_id, url, lang, outdir, progress=None):
     p(step="Downloading video", pct=20)
     video = pipeline.download(url, outdir)
     duration = pipeline.probe_dur(video)
+    p(duration=duration)
 
     p(step="Extracting frames", pct=38)
     frames = pipeline.extract_frames(video, os.path.join(outdir, "frames"),
@@ -74,9 +93,11 @@ def extract(job_id, url, lang, outdir, progress=None):
 
     p(step="Claude is mapping the story", pct=72)
     story = agent.build_story(groups, duration, cwd=outdir)
+    p(step="Story mapped", pct=78, story=_story_payload(story, None, duration))
 
     p(step=f"Claude is translating ({lang})", pct=84)
     tr = agent.translate(story, groups, lang=lang, cwd=outdir)
+    p(step="Translated", pct=90, story=_story_payload(story, tr, duration))
 
     p(step="Cutting beat clips", pct=92)
     clips_dir = os.path.join(outdir, "clips")
