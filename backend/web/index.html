@@ -216,11 +216,11 @@
   });
 
   async function done(id){
-    const sum = `/api/jobs/${id}/summary.html`;
+    const view = `/api/jobs/${id}/view.html`, sum = `/api/jobs/${id}/summary.html`;
     try { const res = await fetch(`/api/jobs/${id}/result`); const meta = await res.json();
       $("rtitle").innerHTML = `<span class="ok">✓</span> ${meta.title || "Your page is ready"}`; } catch(e){}
-    $("open").href = sum; $("dl").href = sum; $("dl").setAttribute("download","summary.html");
-    $("frame").src = sum;
+    $("open").href = view; $("dl").href = sum; $("dl").setAttribute("download","summary.html");
+    $("frame").src = view;
     $("build").style.display = "none"; $("result").style.display = "block";
     $("go").disabled = false; $("go").textContent = "Extract another →";
     $("result").scrollIntoView({behavior:"smooth", block:"start"});

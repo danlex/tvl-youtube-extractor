@@ -23,6 +23,23 @@ from extractor import agent, orchestrate, pipeline
 HERE = os.path.dirname(os.path.abspath(__file__))
 JOBS_DIR = os.path.join(HERE, "jobs")
 os.makedirs(JOBS_DIR, exist_ok=True)
+JOB_TTL_DAYS = float(os.environ.get("JOB_TTL_DAYS", "7"))
+
+
+def prune_jobs():
+    """Drop job folders older than JOB_TTL_DAYS so disk doesn't grow forever."""
+    import shutil
+    cutoff = time.time() - JOB_TTL_DAYS * 86400
+    for name in os.listdir(JOBS_DIR):
+        p = os.path.join(JOBS_DIR, name)
+        try:
+            if os.path.isdir(p) and os.path.getmtime(p) < cutoff:
+                shutil.rmtree(p, ignore_errors=True)
+        except OSError:
+            pass
+
+
+prune_jobs()
 
 app = FastAPI(title="TVL YouTube Extractor")
 app.add_middleware(
@@ -108,6 +125,17 @@ def job_frames(job_id: str):
         return {"frames": []}
     fs = sorted(f for f in os.listdir(d) if f.endswith(".jpg"))
     return {"frames": [f"/media/{job_id}/frames/{f}" for f in fs]}
+
+
+@app.get("/api/jobs/{job_id}/view.html")
+def job_view(job_id: str):
+    """Lightweight page (media via /media URLs) — embeds cleanly in the app iframe."""
+    path = os.path.join(JOBS_DIR, job_id, "view.html")
+    if not os.path.exists(path):
+        path = os.path.join(JOBS_DIR, job_id, "summary.html")  # older jobs
+    if not os.path.exists(path):
+        raise HTTPException(404, "not ready")
+    return FileResponse(path, media_type="text/html")
 
 
 @app.get("/api/jobs/{job_id}/summary.html")

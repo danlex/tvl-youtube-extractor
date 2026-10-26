@@ -119,6 +119,15 @@ def extract(job_id, url, lang, outdir, progress=None):
     json.dump(result, open(result_path, "w"), ensure_ascii=False, indent=2)
 
     captions = _captions(groups, tr)
+
+    # Lightweight view.html — media via /media URLs (fast, embeds cleanly in the UI).
+    base = f"/media/{job_id}"
+    gallery_urls = [(s, f"{base}/frames/{os.path.basename(p)}") for s, p in frames]
+    beat_urls = [f"{base}/clips/{os.path.basename(c)}" for c in clip_files]
+    view = render.render_html(story, tr, beat_urls, gallery_urls, captions, url, lang=lang)
+    open(os.path.join(outdir, "view.html"), "w").write(view)
+
+    # Self-contained summary.html — all media inlined as data URIs (for download/share).
     gallery_du = [(s, pipeline.data_uri(pth)) for s, pth in frames]
     beat_du = [pipeline.data_uri(pth) for pth in clip_files]
     html = render.render_html(story, tr, beat_du, gallery_du, captions, url, lang=lang)

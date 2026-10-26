@@ -34,13 +34,56 @@ def yt_id(url_or_id):
     raise ValueError(f"could not parse a YouTube id from: {url_or_id}")
 
 
+def _ytdlp_opts():
+    """Shared yt-dlp flags from env — cookies / proxy / JS runtime / extras.
+    Lets self-hosters get past datacenter-IP blocks without code changes."""
+    opts = []
+    rt = os.environ.get("YTDLP_JS_RUNTIME")
+    if rt:
+        opts += ["--js-runtimes", rt]
+    ck = os.path.expanduser(os.environ.get("YTDLP_COOKIES", ""))
+    if ck and os.path.exists(ck):
+        opts += ["--cookies", ck]
+    cb = os.environ.get("YTDLP_COOKIES_FROM_BROWSER")
+    if cb:
+        opts += ["--cookies-from-browser", cb]
+    px = os.environ.get("YTDLP_PROXY")
+    if px:
+        opts += ["--proxy", px]
+    extra = os.environ.get("YTDLP_EXTRA")
+    if extra:
+        opts += extra.split()
+    return opts
+
+
+def friendly_error(text):
+    """Map a raw yt-dlp / pipeline error to a clear, user-facing message."""
+    t = (text or "").lower()
+    if "sign in to confirm" in t or "not a bot" in t or "429" in t:
+        return ("YouTube is blocking this network (common on servers/VPNs). Run it "
+                "locally, or set YTDLP_COOKIES / YTDLP_PROXY.")
+    if "private video" in t:
+        return "That video is private."
+    if "members-only" in t or "join this channel" in t:
+        return "That video is members-only."
+    if "age" in t and "confirm" in t:
+        return "That video is age-restricted — add YTDLP_COOKIES from a logged-in account."
+    if "no transcript" in t:
+        return ("No captions on this video and no speech-to-text backend available — "
+                "install faster-whisper (pip) or set ASR_BACKEND.")
+    if "is not a valid url" in t or "unsupported url" in t:
+        return "That doesn't look like a supported video URL."
+    return (text or "something went wrong").strip()[:300]
+
+
 def download(url, outdir, maxres=720):
     vid = yt_id(url)
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, f"{vid}.mp4")
     if not os.path.exists(out):
-        sh(["yt-dlp", "-S", f"res:{maxres},ext:mp4:m4a", "--recode-video", "mp4",
-            "-o", out, f"https://www.youtube.com/watch?v={vid}"])
+        sh(["yt-dlp", *_ytdlp_opts(), "-S", f"res:{maxres},ext:mp4:m4a",
+            "--recode-video", "mp4", "-o", out,
+            f"https://www.youtube.com/watch?v={vid}"])
     return out
 
 
@@ -58,7 +101,7 @@ def meta(url):
     """Title + duration without downloading (yt-dlp --dump-json)."""
     vid = yt_id(url)
     r = subprocess.run(
-        ["yt-dlp", "--skip-download", "--dump-json",
+        ["yt-dlp", *_ytdlp_opts(), "--skip-download", "--dump-json",
          f"https://www.youtube.com/watch?v={vid}"],
         capture_output=True, text=True)
     try:
@@ -190,8 +233,8 @@ def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
     no audio decode. Returns [{text,start,end}] or [] if none exist."""
     vid = yt_id(url)
     subprocess.run(
-        ["yt-dlp", "--write-subs", "--write-auto-subs", "--sub-langs", sub_langs,
-         "--skip-download", "--sub-format", "vtt",
+        ["yt-dlp", *_ytdlp_opts(), "--write-subs", "--write-auto-subs",
+         "--sub-langs", sub_langs, "--skip-download", "--sub-format", "vtt",
          "-o", os.path.join(outdir, "%(id)s.%(ext)s"),
          f"https://www.youtube.com/watch?v={vid}"],
         capture_output=True, text=True)
