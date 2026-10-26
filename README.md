@@ -87,6 +87,20 @@ For **Codex / Cursor / other clients**, add to their MCP config:
 Then just ask your agent: *"use tvl-ytx to summarize https://youtu.be/… in French"*.
 Prereqs: `yt-dlp` + `ffmpeg` on PATH, and Claude Code logged in (or `ANTHROPIC_API_KEY`).
 
+## How it's organized
+
+One agent, its skill + command, and one MCP — the one-line installer sets up all of it:
+
+| Piece | What | Where |
+|---|---|---|
+| **Agent** | `video-extractor` — handles any "summarize/transcribe this video" request | `.claude/agents/` |
+| **Skill** | `tvl-youtube-extractor` — how-to the agent loads on demand | `.claude/skills/` |
+| **Command** | `/tvl-extract <url> [lang]` — the one-liner trigger | `.claude/commands/` |
+| **MCP (tools)** | `tvl-ytx` — `extract_video`, `get_transcript` for **any** agent | `backend/extractor/mcp_server.py` |
+
+Under the hood they all call the same engine (`extractor/`): yt-dlp → ffmpeg → captions
+or faster-whisper → the Claude agent → a self-contained page. Same engine, four ways in.
+
 ## How it works
 
 ```
