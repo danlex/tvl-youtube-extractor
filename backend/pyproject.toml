@@ -1,0 +1,26 @@
+[project]
+name = "tvl-youtube-extractor"
+version = "0.1.0"
+description = "Turn a video into a story-timeline summary — MCP tool + CLI for any agent."
+readme = "../README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Alexandru DAN / TVL Academy" }]
+dependencies = [
+  "anthropic>=0.49.0",
+  "faster-whisper>=1.0.0",
+  "mcp>=1.2.0,<2.0",
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+]
+
+[project.scripts]
+tvl-ytx-mcp = "extractor.mcp_server:main"
+tvl-ytx = "extractor.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["extractor"]

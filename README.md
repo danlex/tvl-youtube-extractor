@@ -49,6 +49,44 @@ frames, clips, and a bilingual transcript.
 Change the language with the second argument (`French`, `Spanish`, `German`, …); the
 English transcript is always kept alongside the translation.
 
+## Use it from any agent (MCP)
+
+The extractor ships an **MCP server**, so Claude Code/Desktop, Codex, Cursor, Cline —
+any MCP client — can call it as a tool. It runs **locally** on your machine (so YouTube
+works — residential IP), needs **no API key** (uses your Claude session), and also
+accepts **local files and non-YouTube URLs**.
+
+Tools: `extract_video(source, language)` → title, beats, and a `summary.html` path;
+`get_transcript(source)` → just the timed transcript. `source` is a YouTube link, any
+yt-dlp URL, or a path to a local video file.
+
+**Register it (pick one):**
+
+```bash
+# Claude Code — zero install, via npx (bootstraps a Python env on first run)
+claude mcp add tvl-ytx -- npx -y github:danlex/tvl-youtube-extractor
+
+# …or Python-native with uvx
+claude mcp add tvl-ytx -- uvx --from "git+https://github.com/danlex/tvl-youtube-extractor.git#subdirectory=backend" tvl-ytx-mcp
+
+# …or install once with pipx, then register the command
+pipx install "git+https://github.com/danlex/tvl-youtube-extractor.git#subdirectory=backend"
+claude mcp add tvl-ytx -- tvl-ytx-mcp
+```
+
+For **Codex / Cursor / other clients**, add to their MCP config:
+
+```json
+{
+  "mcpServers": {
+    "tvl-ytx": { "command": "npx", "args": ["-y", "github:danlex/tvl-youtube-extractor"] }
+  }
+}
+```
+
+Then just ask your agent: *"use tvl-ytx to summarize https://youtu.be/… in French"*.
+Prereqs: `yt-dlp` + `ffmpeg` on PATH, and Claude Code logged in (or `ANTHROPIC_API_KEY`).
+
 ## How it works
 
 ```

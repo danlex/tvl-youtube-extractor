@@ -71,10 +71,8 @@ def run_job(job_id, url, lang):
 
 @app.post("/api/extract")
 def extract(req: ExtractReq):
-    try:
-        pipeline.yt_id(req.url)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
+    if not pipeline.valid_source(req.url):
+        raise HTTPException(400, "not a valid video URL, id, or local file path")
     job_id = uuid.uuid4().hex[:12]
     JOBS[job_id] = {"status": "running", "step": "Queued", "pct": 0,
                     "error": None, "title": ""}

@@ -76,14 +76,51 @@ def friendly_error(text):
     return (text or "something went wrong").strip()[:300]
 
 
-def download(url, outdir, maxres=720):
-    vid = yt_id(url)
+def source_id(src):
+    """A stable id for any source — a YouTube id, else a hash of the path/URL."""
+    if os.path.exists(os.path.expanduser(src)):
+        return "f" + hashlib.md5(os.path.abspath(os.path.expanduser(src)).encode()).hexdigest()[:11]
+    try:
+        return yt_id(src)
+    except ValueError:
+        return "u" + hashlib.md5(src.encode()).hexdigest()[:11]
+
+
+def valid_source(src):
+    """A local file, any URL, or a YouTube id/link."""
+    if not src:
+        return False
+    if os.path.exists(os.path.expanduser(src)) or "://" in src:
+        return True
+    try:
+        yt_id(src)
+        return True
+    except ValueError:
+        return False
+
+
+def _yt_target(src):
+    """Resolve a source to what yt-dlp should fetch; None for a local file."""
+    p = os.path.expanduser(src)
+    if os.path.exists(p):
+        return None
+    try:
+        return f"https://www.youtube.com/watch?v={yt_id(src)}"
+    except ValueError:
+        return src  # any other yt-dlp-supported URL (Vimeo, direct mp4, …)
+
+
+def download(src, outdir, maxres=720):
+    """Get a playable video for `src` — a YouTube URL/id, any yt-dlp URL, or a
+    LOCAL FILE PATH (returned as-is; ffmpeg reads it directly)."""
+    local = os.path.expanduser(src)
+    if os.path.exists(local):
+        return local
     os.makedirs(outdir, exist_ok=True)
-    out = os.path.join(outdir, f"{vid}.mp4")
+    out = os.path.join(outdir, f"{source_id(src)}.mp4")
     if not os.path.exists(out):
         sh(["yt-dlp", *_ytdlp_opts(), "-S", f"res:{maxres},ext:mp4:m4a",
-            "--recode-video", "mp4", "-o", out,
-            f"https://www.youtube.com/watch?v={vid}"])
+            "--recode-video", "mp4", "-o", out, _yt_target(src)])
     return out
 
 
@@ -97,19 +134,23 @@ def probe_dur(path):
         return 0.0
 
 
-def meta(url):
-    """Title + duration without downloading (yt-dlp --dump-json)."""
-    vid = yt_id(url)
+def meta(src):
+    """Title + duration for any source (local file, YouTube, or other URL)."""
+    local = os.path.expanduser(src)
+    if os.path.exists(local):
+        return {"title": os.path.splitext(os.path.basename(local))[0],
+                "duration": probe_dur(local), "uploader": "", "id": source_id(src)}
+    target = _yt_target(src)
     r = subprocess.run(
-        ["yt-dlp", *_ytdlp_opts(), "--skip-download", "--dump-json",
-         f"https://www.youtube.com/watch?v={vid}"],
+        ["yt-dlp", *_ytdlp_opts(), "--skip-download", "--dump-json", target],
         capture_output=True, text=True)
     try:
         d = json.loads(r.stdout)
-        return {"title": d.get("title", vid), "duration": d.get("duration", 0),
-                "uploader": d.get("uploader", ""), "id": vid}
+        return {"title": d.get("title", source_id(src)),
+                "duration": d.get("duration", 0),
+                "uploader": d.get("uploader", ""), "id": d.get("id", source_id(src))}
     except json.JSONDecodeError:
-        return {"title": vid, "duration": 0, "uploader": "", "id": vid}
+        return {"title": source_id(src), "duration": 0, "uploader": "", "id": source_id(src)}
 
 
 def extract_frames(video, frames_dir, every=5, width=640):
@@ -230,8 +271,12 @@ def _parse_vtt(path):
 
 def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
     """Fetch YouTube subtitles (manual first, then auto) via yt-dlp — no whisper,
-    no audio decode. Returns [{text,start,end}] or [] if none exist."""
-    vid = yt_id(url)
+    no audio decode. Returns [{text,start,end}] or [] (e.g. local files / non-YouTube,
+    which fall through to speech-to-text)."""
+    try:
+        vid = yt_id(url)
+    except ValueError:
+        return []
     subprocess.run(
         ["yt-dlp", *_ytdlp_opts(), "--write-subs", "--write-auto-subs",
          "--sub-langs", sub_langs, "--skip-download", "--sub-format", "vtt",

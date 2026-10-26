@@ -1,0 +1,10 @@
+{
+  "name": "tvl-youtube-extractor",
+  "version": "0.1.0",
+  "description": "MCP server: turn a video (YouTube, any URL, or a local file) into a story-timeline summary. Runs locally for any agent.",
+  "bin": "bin/mcp.js",
+  "files": ["bin", "backend"],
+  "license": "MIT",
+  "homepage": "https://github.com/danlex/tvl-youtube-extractor",
+  "repository": { "type": "git", "url": "https://github.com/danlex/tvl-youtube-extractor.git" }
+}
