@@ -47,14 +47,23 @@ if grep -q "__EXTRACT_SH__" "$CLAUDE/commands/tvl-extract.md"; then
   echo "error: command path was not substituted" >&2; exit 1
 fi
 
-# 5. register the one MCP server (tools) — lazily bootstrapped by bin/mcp.js
+# 5. register the one MCP server (tools)
 if command -v claude >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+  # pre-build the Python env so the MCP starts instantly (no lazy bootstrap stall)
+  if command -v python3 >/dev/null 2>&1; then
+    say "building the Python env (first time takes a minute)…"
+    ( cd "$DIR/backend" && python3 -m venv .venv \
+      && .venv/bin/pip install -q --upgrade pip \
+      && .venv/bin/pip install -q -r requirements.txt ) >/dev/null 2>&1 \
+      && say "env     → $DIR/backend/.venv" \
+      || say "(env build failed — the MCP will bootstrap on first use)"
+  fi
   claude mcp remove tvl-ytx >/dev/null 2>&1 || true
   if claude mcp add tvl-ytx -- node "$DIR/bin/mcp.js" >/dev/null 2>&1; then
     say "mcp     → tvl-ytx (extract_video, get_transcript)"
   fi
 elif command -v claude >/dev/null 2>&1; then
-  say "mcp: install Node to auto-register, or run: claude mcp add tvl-ytx -- node $DIR/bin/mcp.js"
+  say "mcp: install Node to auto-register, or: claude mcp add tvl-ytx -- node $DIR/bin/mcp.js"
 fi
 
 echo "✓ Done — one agent, its skill + command, and one MCP."
