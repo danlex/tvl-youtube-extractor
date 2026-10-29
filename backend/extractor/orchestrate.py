@@ -91,13 +91,9 @@ def extract(job_id, url, lang, outdir, progress=None):
     p(step=f"Transcript via {tsource}", pct=60)
     groups = pipeline.sentence_groups(segments)
 
-    p(step="Claude is mapping the story", pct=72)
-    story = agent.build_story(groups, duration, cwd=outdir)
-    p(step="Story mapped", pct=78, story=_story_payload(story, None, duration))
-
-    p(step=f"Claude is translating ({lang})", pct=84)
-    tr = agent.translate(story, groups, lang=lang, cwd=outdir)
-    p(step="Translated", pct=90, story=_story_payload(story, tr, duration))
+    p(step=f"Claude is mapping the story ({lang})", pct=72)
+    story, tr = agent.build_and_translate(groups, duration, lang=lang, cwd=outdir)
+    p(step="Story ready", pct=88, story=_story_payload(story, tr, duration))
 
     p(step="Cutting beat clips", pct=92)
     clips_dir = os.path.join(outdir, "clips")

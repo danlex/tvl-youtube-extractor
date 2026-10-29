@@ -155,3 +155,63 @@ def translate(story, groups, lang="Romanian", cwd=None):
     )
     user = "Translate this JSON:\n" + json.dumps(payload, ensure_ascii=False)
     return _run(system, user, TRANSLATE_SCHEMA, cwd=cwd)
+
+
+# ----------------------------------------------------------------- combined (1 call)
+COMBINED_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "title": {"type": "string"}, "title_t": {"type": "string"},
+        "acts": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"key": {"type": "string"}, "label": {"type": "string"},
+                           "label_t": {"type": "string"}},
+            "required": ["key", "label", "label_t"]}},
+        "beats": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"t": {"type": "number"}, "act": {"type": "string"},
+                           "title": {"type": "string"}, "title_t": {"type": "string"},
+                           "summary": {"type": "string"}, "summary_t": {"type": "string"}},
+            "required": ["t", "act", "title", "title_t", "summary", "summary_t"]}},
+        "captions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"start": {"type": "number"}, "text_t": {"type": "string"}},
+            "required": ["start", "text_t"]}},
+    },
+    "required": ["title", "title_t", "acts", "beats", "captions"],
+}
+
+
+def build_and_translate(groups, duration, lang="English", cwd=None):
+    """Map the story AND translate it in ONE agent call (half the cost/latency of
+    build_story + translate). Returns (story, tr) in the same shapes those produce."""
+    system = (
+        STORY_SYSTEM + "\n\n"
+        f"ALSO translate into {lang}: the overall title (`title_t`), each act label "
+        f"(`label_t`), each beat's title (`title_t`) and summary (`summary_t`), and "
+        f"EVERY transcript line (`captions`: one {{start, text_t}} per input line, "
+        f"same start values, same count, in order). Keep the English originals.\n\n"
+        "Return ONLY minified JSON, no prose, no code fence, with exactly this shape: "
+        '{"title":str,"title_t":str,"acts":[{"key":str,"label":str,"label_t":str}],'
+        '"beats":[{"t":num,"act":str,"title":str,"title_t":str,"summary":str,'
+        '"summary_t":str}],"captions":[{"start":num,"text_t":str}]}'
+    )
+    lines = "\n".join(f"[{round(s,1)}] {t}" for s, _d, t in groups)
+    user = (f"Video duration: {int(duration)} seconds.\n\n"
+            f"Transcript (each line prefixed with its start time in seconds):\n{lines}")
+    c = _run(system, user, COMBINED_SCHEMA, cwd=cwd)
+    story = {
+        "title": c["title"], "duration": duration,
+        "acts": [{"key": a["key"], "label": a["label"]} for a in c["acts"]],
+        "beats": [{"t": b["t"], "act": b["act"], "title": b["title"],
+                   "summary": b["summary"]} for b in c["beats"]],
+    }
+    tr = {
+        "title": c.get("title_t", ""),
+        "acts": [{"key": a["key"], "label": a.get("label_t", a["label"])} for a in c["acts"]],
+        "beats": [{"title": b.get("title_t", ""), "summary": b.get("summary_t", "")}
+                  for b in c["beats"]],
+        "captions": [{"start": x["start"], "text": x.get("text_t", "")}
+                     for x in c.get("captions", [])],
+    }
+    return story, tr

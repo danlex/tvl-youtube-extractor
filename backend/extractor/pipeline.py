@@ -196,21 +196,30 @@ def _extract_wav(video, workdir):
     return wav
 
 
+_FW_MODELS = {}  # model name -> loaded WhisperModel (warm across jobs in a process)
+
+
+def _fw_model(model):
+    m = _FW_MODELS.get(model)
+    if m is None:
+        from faster_whisper import WhisperModel
+        threads = int(os.environ.get("ASR_THREADS", "0"))
+        m = WhisperModel(model, device="cpu", compute_type="int8", cpu_threads=threads)
+        _FW_MODELS[model] = m
+    return m
+
+
 def transcribe_fw(video, workdir, model="base.en"):
     """Transcribe with faster-whisper (CTranslate2, int8 CPU). We decode the 16kHz
     mono wav to a numpy array ourselves so faster-whisper never touches PyAV (whose
-    version often clashes). Light enough for a 1-vCPU box (RTF ~0.2-0.35)."""
+    version often clashes). The model is loaded once per process and reused."""
     import wave as _wave
     import numpy as np
-    from faster_whisper import WhisperModel
     wav = _extract_wav(video, workdir)
     wf = _wave.open(wav)
     audio = (np.frombuffer(wf.readframes(wf.getnframes()), np.int16)
              .astype(np.float32) / 32768.0)
-    threads = int(os.environ.get("ASR_THREADS", "0")) or None
-    m = WhisperModel(model, device="cpu", compute_type="int8",
-                     cpu_threads=threads or 0)
-    segs, _info = m.transcribe(audio, beam_size=1)
+    segs, _info = _fw_model(model).transcribe(audio, beam_size=1)
     return [{"text": s.text.strip(), "start": float(s.start), "end": float(s.end)}
             for s in segs]
 

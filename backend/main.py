@@ -58,15 +58,25 @@ class ExtractReq(BaseModel):
     lang: str = "Romanian"
 
 
+# Cap how many extractions run at once (each is CPU-heavy). Extra jobs wait.
+_SLOTS = threading.Semaphore(max(1, int(os.environ.get("JOB_CONCURRENCY", "2"))))
+
+
 def run_job(job_id, url, lang):
     outdir = os.path.join(JOBS_DIR, job_id)
+    if not _SLOTS.acquire(blocking=False):
+        _set(job_id, step="Waiting for a free slot…")
+        _SLOTS.acquire()
     try:
         orchestrate.extract(job_id, url, lang, outdir,
                             progress=lambda **k: _set(job_id, **k))
         _set(job_id, status="done", step="Done", pct=100)
     except Exception as e:
         traceback.print_exc()
-        _set(job_id, status="error", step="Failed", error=str(e))
+        _set(job_id, status="error", step="Failed",
+             error=pipeline.friendly_error(str(e)))
+    finally:
+        _SLOTS.release()
 
 
 @app.post("/api/extract")
