@@ -48,6 +48,7 @@ def build_result(job_id, info, url, lang, story, tr, beats, clip_files, frames, 
         "tldr_t": tr.get("tldr", ""),
         "source": url,
         "uploader": info.get("uploader", ""),
+        "src_lang": info.get("language", ""),
         "duration": story.get("duration", 0),
         "lang": lang,
         "acts": [{"key": a["key"], "label": a["label"],
@@ -86,11 +87,13 @@ def extract(job_id, url, lang, outdir, progress=None):
     frames = pipeline.extract_frames(video, os.path.join(outdir, "frames"),
                                      every=5, width=640)
 
+    src_lang = info.get("language", "")
     p(step="Transcribing", pct=55)
     segments, tsource = pipeline.transcribe_source(
         video, url, outdir,
         whisper_model=os.environ.get("WHISPER_MODEL", "small.en"),
-        prefer=os.environ.get("TRANSCRIBE_PREFER", "captions"))
+        prefer=os.environ.get("TRANSCRIBE_PREFER", "captions"),
+        src_lang=src_lang)
     p(step=f"Transcript via {tsource}", pct=60)
     groups = pipeline.sentence_groups(segments)
 

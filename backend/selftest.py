@@ -17,6 +17,15 @@ def main():
     assert sid.startswith("u") and len(sid) == 12, sid
     assert pipeline.source_id("https://vimeo.com/12345") == sid  # deterministic
 
+    # source-language handling
+    assert pipeline._norm_lang("en-US") == "en"
+    assert pipeline._norm_lang("fr_FR") == "fr"
+    assert pipeline._norm_lang(None) == ""
+    assert pipeline._caption_langs(None) == pipeline._EN      # default English
+    assert pipeline._caption_langs("en-GB") == pipeline._EN   # English stays English
+    fr = pipeline._caption_langs("fr")
+    assert fr.startswith("fr.*,fr,") and fr.endswith(pipeline._EN), fr  # source first
+
     # sentence grouping
     segs = [
         {"text": "Hello world.", "start": 0.0, "end": 2.0},

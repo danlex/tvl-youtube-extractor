@@ -139,7 +139,8 @@ def meta(src):
     local = os.path.expanduser(src)
     if os.path.exists(local):
         return {"title": os.path.splitext(os.path.basename(local))[0],
-                "duration": probe_dur(local), "uploader": "", "id": source_id(src)}
+                "duration": probe_dur(local), "uploader": "", "id": source_id(src),
+                "language": ""}
     target = _yt_target(src)
     r = subprocess.run(
         ["yt-dlp", *_ytdlp_opts(), "--skip-download", "--dump-json", target],
@@ -148,9 +149,11 @@ def meta(src):
         d = json.loads(r.stdout)
         return {"title": d.get("title", source_id(src)),
                 "duration": d.get("duration", 0),
-                "uploader": d.get("uploader", ""), "id": d.get("id", source_id(src))}
+                "uploader": d.get("uploader", ""), "id": d.get("id", source_id(src)),
+                "language": _norm_lang(d.get("language"))}
     except json.JSONDecodeError:
-        return {"title": source_id(src), "duration": 0, "uploader": "", "id": source_id(src)}
+        return {"title": source_id(src), "duration": 0, "uploader": "",
+                "id": source_id(src), "language": ""}
 
 
 def extract_frames(video, frames_dir, every=5, width=640):
@@ -209,17 +212,18 @@ def _fw_model(model):
     return m
 
 
-def transcribe_fw(video, workdir, model="base.en"):
+def transcribe_fw(video, workdir, model="base.en", language=None):
     """Transcribe with faster-whisper (CTranslate2, int8 CPU). We decode the 16kHz
     mono wav to a numpy array ourselves so faster-whisper never touches PyAV (whose
-    version often clashes). The model is loaded once per process and reused."""
+    version often clashes). The model is loaded once per process and reused.
+    `language` (e.g. 'fr') hints a multilingual model; None lets it auto-detect."""
     import wave as _wave
     import numpy as np
     wav = _extract_wav(video, workdir)
     wf = _wave.open(wav)
     audio = (np.frombuffer(wf.readframes(wf.getnframes()), np.int16)
              .astype(np.float32) / 32768.0)
-    segs, _info = _fw_model(model).transcribe(audio, beam_size=1)
+    segs, _info = _fw_model(model).transcribe(audio, beam_size=1, language=language)
     return [{"text": s.text.strip(), "start": float(s.start), "end": float(s.end)}
             for s in segs]
 
@@ -278,7 +282,32 @@ def _parse_vtt(path):
     return out
 
 
-def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
+_EN = "en.*,en,en-US,en-GB,en-orig"
+
+
+def _norm_lang(code):
+    """Normalize a yt-dlp language tag ('en-US', 'fr-FR') to a base code ('en', 'fr')."""
+    if not code:
+        return ""
+    return str(code).split("-")[0].split("_")[0].strip().lower()
+
+
+def _caption_langs(src_lang):
+    """Build a yt-dlp --sub-langs preference string, SOURCE LANGUAGE FIRST then
+    English. A non-English track is requested ahead of English so it isn't missed
+    (English auto-captions can silently shadow the real source track)."""
+    base = _norm_lang(src_lang)
+    if not base or base == "en":
+        return _EN
+    return f"{base}.*,{base},{_EN}"
+
+
+def _ml_model():
+    """Multilingual ASR model for non-English audio (ASR_MODEL is English-only)."""
+    return os.environ.get("ASR_MODEL_ML", "base")
+
+
+def captions(url, outdir, sub_langs=_EN):
     """Fetch YouTube subtitles (manual first, then auto) via yt-dlp — no whisper,
     no audio decode. Returns [{text,start,end}] or [] (e.g. local files / non-YouTube,
     which fall through to speech-to-text)."""
@@ -301,39 +330,48 @@ def captions(url, outdir, sub_langs="en.*,en,en-US,en-GB,en-orig"):
     return _parse_vtt(os.path.join(outdir, cands[0]))
 
 
-def _asr(video, workdir):
+def _asr(video, workdir, src_lang=None):
     """Run the configured speech-to-text backend. Returns (segments, source) or None.
-    ASR_BACKEND: faster-whisper (default) | whisper-cli. ASR_MODEL picks the model."""
+    ASR_BACKEND: faster-whisper (default) | whisper-cli. ASR_MODEL picks the model.
+    For a non-English source, use a multilingual model (ASR_MODEL_ML) + language hint
+    instead of the English-only default, so non-English audio isn't mangled."""
+    base = _norm_lang(src_lang)
+    foreign = bool(base) and base != "en"
     backend = os.environ.get("ASR_BACKEND", "faster-whisper")
     if backend == "faster-whisper":
         try:
-            model = os.environ.get("ASR_MODEL", "base.en")
-            return transcribe_fw(video, workdir, model), f"faster-whisper:{model}"
+            model = _ml_model() if foreign else os.environ.get("ASR_MODEL", "base.en")
+            hint = base if foreign else None
+            return (transcribe_fw(video, workdir, model, language=hint),
+                    f"faster-whisper:{model}")
         except Exception as e:
             print(f"[asr] faster-whisper failed: {e}")
     if backend == "whisper-cli" or shutil.which("whisper-cli"):
         try:
-            model = os.environ.get("WHISPER_MODEL", "small.en")
+            model = _ml_model() if foreign else os.environ.get("WHISPER_MODEL", "small.en")
             return transcribe(video, workdir, model), "whisper-cli"
         except Exception as e:
             print(f"[asr] whisper-cli failed: {e}")
     return None
 
 
-def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="captions"):
+def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="captions",
+                      src_lang=None):
     """Get a transcript the cheapest way that works. Returns (segments, source).
-    prefer='captions' tries YouTube subtitles first (free, no CPU), then falls back
-    to real speech transcription (faster-whisper by default). prefer='asr' flips it."""
+    prefer='captions' tries subtitles first (free, no CPU), then falls back to real
+    speech transcription (faster-whisper by default). prefer='asr' flips it.
+    src_lang (e.g. 'fr') requests the source-language caption track first and picks a
+    multilingual ASR model for non-English audio."""
     def try_caps():
         try:
-            return captions(url, workdir)
+            return captions(url, workdir, sub_langs=_caption_langs(src_lang))
         except Exception:
             return []
     if prefer == "captions":
         segs = try_caps()
         if segs:
             return segs, "captions"
-    got = _asr(video, workdir)
+    got = _asr(video, workdir, src_lang=src_lang)
     if got:
         return got
     if prefer != "captions":
