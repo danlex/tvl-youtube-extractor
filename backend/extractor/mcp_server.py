@@ -84,9 +84,9 @@ def get_transcript(source: str) -> dict:
     outdir = os.path.join(JOBS_DIR, job)
     os.makedirs(outdir, exist_ok=True)
     video = pipeline.download(source, outdir)
-    segs, src = pipeline.transcribe_source(video, source, outdir)
+    segs, src, src_lang = pipeline.transcribe_source(video, source, outdir)
     groups = pipeline.sentence_groups(segs)
-    return {"source_of_transcript": src,
+    return {"source_of_transcript": src, "language": src_lang,
             "lines": [{"start": round(s, 1), "text": t} for s, _d, t in groups]}
 
 

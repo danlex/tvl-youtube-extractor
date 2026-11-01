@@ -191,7 +191,17 @@ def data_uri(path):
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
-def _extract_wav(video, workdir):
+def _extract_wav(video, workdir, seconds=None, offset=0):
+    """16kHz mono wav. seconds>0 extracts only a slice (for cheap language detection),
+    optionally starting at `offset` seconds, into its own file so it never clobbers the
+    full-audio cache."""
+    if seconds:
+        wav = os.path.join(workdir, f"audio_{int(offset)}_{int(seconds)}s.wav")
+        if not os.path.exists(wav):
+            sh(["ffmpeg", "-y", "-v", "error", "-ss", str(int(offset)),
+                "-t", str(int(seconds)), "-i", video,
+                "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav])
+        return wav
     wav = os.path.join(workdir, "audio.wav")
     if not os.path.exists(wav):
         sh(["ffmpeg", "-y", "-v", "error", "-i", video,
@@ -216,16 +226,44 @@ def transcribe_fw(video, workdir, model="base.en", language=None):
     """Transcribe with faster-whisper (CTranslate2, int8 CPU). We decode the 16kHz
     mono wav to a numpy array ourselves so faster-whisper never touches PyAV (whose
     version often clashes). The model is loaded once per process and reused.
-    `language` (e.g. 'fr') hints a multilingual model; None lets it auto-detect."""
+    `language` (e.g. 'fr') hints a multilingual model; None lets it auto-detect.
+    Returns (segments, detected_language) — detected_language is faster-whisper's
+    own guess (empty with an English-only model)."""
     import wave as _wave
     import numpy as np
     wav = _extract_wav(video, workdir)
     wf = _wave.open(wav)
     audio = (np.frombuffer(wf.readframes(wf.getnframes()), np.int16)
              .astype(np.float32) / 32768.0)
-    segs, _info = _fw_model(model).transcribe(audio, beam_size=1, language=language)
-    return [{"text": s.text.strip(), "start": float(s.start), "end": float(s.end)}
-            for s in segs]
+    segs, info = _fw_model(model).transcribe(audio, beam_size=1, language=language)
+    out = [{"text": s.text.strip(), "start": float(s.start), "end": float(s.end)}
+           for s in segs]
+    return out, _norm_lang(getattr(info, "language", "") or "")
+
+
+def detect_language(video, workdir, seconds=None):
+    """Best-effort source-language detection from a leading audio slice, using a
+    multilingual faster-whisper model. Returns a base code ('fr') or '' on failure.
+    This is the only reliable signal: yt-dlp rarely exposes `language`, and YouTube
+    auto-generates English captions for nearly everything, so a caption probe would
+    wrongly report English for a foreign video."""
+    seconds = seconds or int(os.environ.get("DETECT_LANG_SECONDS", "45"))
+    try:
+        import wave as _wave
+        import numpy as np
+        # Sample from ~30% in, not the start: intros are often music / English
+        # branding / call-outs and mislead detection (e.g. "Oh Fonsi" in a Spanish song).
+        dur = probe_dur(video)
+        offset = max(0, min(dur * 0.3, max(0, dur - seconds)))
+        wav = _extract_wav(video, workdir, seconds=seconds, offset=offset)
+        wf = _wave.open(wav)
+        audio = (np.frombuffer(wf.readframes(wf.getnframes()), np.int16)
+                 .astype(np.float32) / 32768.0)
+        _segs, info = _fw_model(_ml_model()).transcribe(audio, beam_size=1)
+        return _norm_lang(getattr(info, "language", "") or "")
+    except Exception as e:
+        print(f"[lang] detect failed: {e}")
+        return ""
 
 
 def transcribe(video, workdir, model="small.en"):
@@ -307,14 +345,36 @@ def _ml_model():
     return os.environ.get("ASR_MODEL_ML", "base")
 
 
+_LANG_NAMES = {
+    "en": "English", "es": "Spanish", "fr": "French", "de": "German",
+    "it": "Italian", "pt": "Portuguese", "ro": "Romanian", "ru": "Russian",
+    "nl": "Dutch", "pl": "Polish", "tr": "Turkish", "ar": "Arabic",
+    "hi": "Hindi", "ja": "Japanese", "ko": "Korean", "zh": "Chinese",
+    "uk": "Ukrainian", "sv": "Swedish", "cs": "Czech", "el": "Greek",
+}
+
+
+def lang_name(code):
+    """Human-readable name for a base language code; 'Original' if unknown/empty."""
+    return _LANG_NAMES.get(_norm_lang(code), "Original" if code else "English")
+
+
+def _vtt_lang(fname):
+    """Base language code of a yt-dlp subtitle filename '<id>.<lang>.vtt'."""
+    parts = fname.rsplit(".", 2)          # [..., lang, "vtt"]
+    lang = parts[-2] if len(parts) >= 2 else ""
+    return _norm_lang(lang.replace("-orig", ""))
+
+
 def captions(url, outdir, sub_langs=_EN):
     """Fetch YouTube subtitles (manual first, then auto) via yt-dlp — no whisper,
-    no audio decode. Returns [{text,start,end}] or [] (e.g. local files / non-YouTube,
-    which fall through to speech-to-text)."""
+    no audio decode. Returns (segments, lang) — lang is the base language code of the
+    track actually fetched (so callers know the real source language), or ([], "")
+    for local files / non-YouTube / no-captions (which fall through to speech-to-text)."""
     try:
         vid = yt_id(url)
     except ValueError:
-        return []
+        return [], ""
     subprocess.run(
         ["yt-dlp", *_ytdlp_opts(), "--write-subs", "--write-auto-subs",
          "--sub-langs", sub_langs, "--skip-download", "--sub-format", "vtt",
@@ -324,32 +384,35 @@ def captions(url, outdir, sub_langs=_EN):
     cands = [f for f in os.listdir(outdir)
              if f.startswith(vid + ".") and f.endswith(".vtt")]
     if not cands:
-        return []
+        return [], ""
     # prefer a manual track (no ".auto" / "-auto" marker) and a shorter lang tag
     cands.sort(key=lambda f: ("auto" in f.lower(), len(f)))
-    return _parse_vtt(os.path.join(outdir, cands[0]))
+    chosen = cands[0]
+    return _parse_vtt(os.path.join(outdir, chosen)), _vtt_lang(chosen)
 
 
 def _asr(video, workdir, src_lang=None):
-    """Run the configured speech-to-text backend. Returns (segments, source) or None.
-    ASR_BACKEND: faster-whisper (default) | whisper-cli. ASR_MODEL picks the model.
-    For a non-English source, use a multilingual model (ASR_MODEL_ML) + language hint
-    instead of the English-only default, so non-English audio isn't mangled."""
+    """Run the configured speech-to-text backend. Returns (segments, source, lang) or
+    None. ASR_BACKEND: faster-whisper (default) | whisper-cli.
+    Model choice: an English hint -> ASR_MODEL (English-only, fast). Anything else
+    (a non-English hint OR no hint at all) -> a multilingual model (ASR_MODEL_ML) that
+    AUTO-DETECTS the language, which it then reports back. The captions fast-path means
+    ASR is usually the fallback for caption-less videos, which skew non-English, so
+    defaulting the fallback to multilingual is the right trade."""
     base = _norm_lang(src_lang)
-    foreign = bool(base) and base != "en"
+    english = base == "en"
     backend = os.environ.get("ASR_BACKEND", "faster-whisper")
     if backend == "faster-whisper":
         try:
-            model = _ml_model() if foreign else os.environ.get("ASR_MODEL", "base.en")
-            hint = base if foreign else None
-            return (transcribe_fw(video, workdir, model, language=hint),
-                    f"faster-whisper:{model}")
+            model = os.environ.get("ASR_MODEL", "base.en") if english else _ml_model()
+            segs, detected = transcribe_fw(video, workdir, model, language=base or None)
+            return segs, f"faster-whisper:{model}", (base or detected or "en")
         except Exception as e:
             print(f"[asr] faster-whisper failed: {e}")
     if backend == "whisper-cli" or shutil.which("whisper-cli"):
         try:
-            model = _ml_model() if foreign else os.environ.get("WHISPER_MODEL", "small.en")
-            return transcribe(video, workdir, model), "whisper-cli"
+            model = os.environ.get("WHISPER_MODEL", "small.en") if english else _ml_model()
+            return transcribe(video, workdir, model), "whisper-cli", (base or "en")
         except Exception as e:
             print(f"[asr] whisper-cli failed: {e}")
     return None
@@ -357,27 +420,34 @@ def _asr(video, workdir, src_lang=None):
 
 def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="captions",
                       src_lang=None):
-    """Get a transcript the cheapest way that works. Returns (segments, source).
-    prefer='captions' tries subtitles first (free, no CPU), then falls back to real
-    speech transcription (faster-whisper by default). prefer='asr' flips it.
-    src_lang (e.g. 'fr') requests the source-language caption track first and picks a
-    multilingual ASR model for non-English audio."""
+    """Get a transcript the cheapest way that works. Returns (segments, source, lang):
+    `lang` is the resolved source-language code (the caption track actually fetched, or
+    whisper's audio auto-detection). prefer='captions' tries subtitles first (free, no
+    CPU), then falls back to real speech transcription (faster-whisper). prefer='asr'
+    flips it. An explicit src_lang hint requests that caption track first; with no hint
+    and DETECT_LANG on (default), the source language is detected from the audio first
+    so the right caption track / ASR language is chosen (set DETECT_LANG=0 to skip)."""
+    hint = _norm_lang(src_lang)
+    if not hint and os.environ.get("DETECT_LANG", "1") != "0":
+        hint = detect_language(video, workdir)
+        src_lang = hint or src_lang
+
     def try_caps():
         try:
             return captions(url, workdir, sub_langs=_caption_langs(src_lang))
         except Exception:
-            return []
+            return [], ""
     if prefer == "captions":
-        segs = try_caps()
+        segs, clang = try_caps()
         if segs:
-            return segs, "captions"
+            return segs, "captions", (hint or clang or "en")
     got = _asr(video, workdir, src_lang=src_lang)
     if got:
         return got
     if prefer != "captions":
-        segs = try_caps()
+        segs, clang = try_caps()
         if segs:
-            return segs, "captions"
+            return segs, "captions", (hint or clang or "en")
     raise RuntimeError(
         "no transcript: no YouTube captions and no working speech-to-text backend "
         "(install faster-whisper or whisper-cli)")

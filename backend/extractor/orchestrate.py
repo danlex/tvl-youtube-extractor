@@ -87,13 +87,13 @@ def extract(job_id, url, lang, outdir, progress=None):
     frames = pipeline.extract_frames(video, os.path.join(outdir, "frames"),
                                      every=5, width=640)
 
-    src_lang = info.get("language", "")
     p(step="Transcribing", pct=55)
-    segments, tsource = pipeline.transcribe_source(
+    segments, tsource, src_lang = pipeline.transcribe_source(
         video, url, outdir,
         whisper_model=os.environ.get("WHISPER_MODEL", "small.en"),
         prefer=os.environ.get("TRANSCRIBE_PREFER", "captions"),
-        src_lang=src_lang)
+        src_lang=info.get("language", ""))
+    info["language"] = src_lang  # resolved source language (track fetched / detected)
     p(step=f"Transcript via {tsource}", pct=60)
     groups = pipeline.sentence_groups(segments)
 
@@ -121,18 +121,21 @@ def extract(job_id, url, lang, outdir, progress=None):
     json.dump(result, open(result_path, "w"), ensure_ascii=False, indent=2)
 
     captions = _captions(groups, tr)
+    src_label = pipeline.lang_name(src_lang)
 
     # Lightweight view.html — media via /media URLs (fast, embeds cleanly in the UI).
     base = f"/media/{job_id}"
     gallery_urls = [(s, f"{base}/frames/{os.path.basename(p)}") for s, p in frames]
     beat_urls = [f"{base}/clips/{os.path.basename(c)}" for c in clip_files]
-    view = render.render_html(story, tr, beat_urls, gallery_urls, captions, url, lang=lang)
+    view = render.render_html(story, tr, beat_urls, gallery_urls, captions, url,
+                              lang=lang, src_label=src_label)
     open(os.path.join(outdir, "view.html"), "w").write(view)
 
     # Self-contained summary.html — all media inlined as data URIs (for download/share).
     gallery_du = [(s, pipeline.data_uri(pth)) for s, pth in frames]
     beat_du = [pipeline.data_uri(pth) for pth in clip_files]
-    html = render.render_html(story, tr, beat_du, gallery_du, captions, url, lang=lang)
+    html = render.render_html(story, tr, beat_du, gallery_du, captions, url,
+                              lang=lang, src_label=src_label)
     html_path = os.path.join(outdir, "summary.html")
     open(html_path, "w").write(html)
 

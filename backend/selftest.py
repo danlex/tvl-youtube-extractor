@@ -25,6 +25,15 @@ def main():
     assert pipeline._caption_langs("en-GB") == pipeline._EN   # English stays English
     fr = pipeline._caption_langs("fr")
     assert fr.startswith("fr.*,fr,") and fr.endswith(pipeline._EN), fr  # source first
+    # the fetched caption track's filename reveals the real source language
+    assert pipeline._vtt_lang("kLpH1nSLJSs.es.vtt") == "es"
+    assert pipeline._vtt_lang("abc.en-US.vtt") == "en"
+    assert pipeline._vtt_lang("abc.es-orig.vtt") == "es"
+    # human-readable labels for the transcript column / markdown
+    assert pipeline.lang_name("es") == "Spanish"
+    assert pipeline.lang_name("en") == "English"
+    assert pipeline.lang_name("") == "English"       # unknown source -> English default
+    assert pipeline.lang_name("xx") == "Original"    # known-nonempty but unmapped
 
     # sentence grouping
     segs = [
@@ -52,29 +61,31 @@ def main():
                   {"title": "Încheiere", "summary": "al doilea moment"}],
         "captions": [{"start": 0.0, "text": "Salut lume."}, {"start": 2.6, "text": "Urmează."}],
     }
-    caps = [(0.0, "Hello world.", "Salut lume."), (2.6, "This is next.", "Urmează.")]
+    caps = [(0.0, "Hola mundo.", "Salut lume."), (2.6, "Esto sigue.", "Urmează.")]
     html = render.render_html(
         story, tr, ["", ""], [(0, "data:image/jpeg;base64,AAAA")], caps,
-        "https://youtu.be/test", lang="Română")
+        "https://youtu.be/test", lang="Română", src_label="Spanish")
     for needle in ("<!doctype html>", "Story timeline", "Test Video",
                    "primul moment", "Salut lume.", "Deschidere",
-                   "A short test clip.", "Un scurt clip de test."):
+                   "A short test clip.", "Un scurt clip de test.",
+                   "<div>Spanish</div>"):  # source column labeled, not hardcoded English
         assert needle in html, f"missing: {needle}"
 
-    # markdown export (from a result.json-shaped dict)
+    # markdown export (from a result.json-shaped dict), with a non-English source
     result = {
         "title": "Test Video", "tldr": "A short test clip.", "source": "https://youtu.be/test",
-        "duration": 30, "lang": "Română",
+        "duration": 30, "lang": "Română", "src_lang": "es",
         "beats": [{"mmss": "0:00", "title": "Opening", "summary": "first beat",
                    "summary_t": "primul moment"}],
-        "captions": [{"mmss": "0:00", "en": "Hello world.", "t": "Salut lume."}],
+        "captions": [{"mmss": "0:00", "en": "Hola mundo.", "t": "Salut lume."}],
     }
     md = render.render_markdown(result)
     for needle in ("# Test Video", "> A short test clip.", "### 0:00 — Opening",
-                   "first beat", "*primul moment*", "**0:00** Hello world."):
+                   "first beat", "*primul moment*", "**0:00** Hola mundo.",
+                   "**Spanish → Română**"):
         assert needle in md, f"missing in md: {needle}"
 
-    print("selftest OK — pipeline + render + tldr + markdown")
+    print("selftest OK — pipeline + render + tldr + markdown + src-lang")
 
 
 if __name__ == "__main__":

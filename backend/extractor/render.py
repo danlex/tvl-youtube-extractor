@@ -4,7 +4,7 @@ This is the portable, shareable artifact the backend offers for download. The
 live Next.js UI renders the same data interactively from the job JSON; this file
 is the "save as one HTML" path.
 """
-from .pipeline import mmss
+from .pipeline import lang_name, mmss
 
 PALETTE = ["#FF4931", "#0E9AA7", "#E0962B", "#2E9E5B", "#7A5AF8",
            "#5A6472", "#C0392B", "#2C7BE5"]
@@ -76,7 +76,8 @@ def _esc(s):
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="Română"):
+def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="Română",
+                src_label="English"):
     """beat_clips: list of data-URI strings aligned to story['beats'] (or '').
     gallery: list of (sec, data_uri). captions: list of (start, en, ro)."""
     acts = story["acts"]
@@ -128,7 +129,7 @@ def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="Rom�
         f'<figure><img src="{uri}" alt=""><figcaption>{mmss(sec)}</figcaption></figure>'
         for sec, uri in gallery)
 
-    caps = (f'<div class="cap hd"><div>Time</div><div>English</div><div>{_esc(lang)}</div></div>'
+    caps = (f'<div class="cap hd"><div>Time</div><div>{_esc(src_label)}</div><div>{_esc(lang)}</div></div>'
             + "".join(f'<div class="cap"><div class="t">{mmss(st)}</div>'
                       f'<div>{_esc(en)}</div><div class="rotext">{_esc(ro)}</div></div>'
                       for st, en, ro in captions))
@@ -162,11 +163,12 @@ def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="Rom�
 def render_markdown(result):
     """A plain-markdown export of a result.json (title, TL;DR, beats, transcript)."""
     r = result
+    src_label = lang_name(r.get("src_lang", ""))
     out = [f"# {r.get('title','')}", ""]
     if r.get("tldr"):
         out += [f"> {r['tldr']}", ""]
     out += [f"**Source:** {r.get('source','')}  ·  **Runtime:** "
-            f"{mmss(r.get('duration',0))}  ·  **Language:** {r.get('lang','')}", "",
+            f"{mmss(r.get('duration',0))}  ·  **{src_label} → {r.get('lang','')}**", "",
             "## Story", ""]
     for b in r.get("beats", []):
         out += [f"### {b.get('mmss','')} — {b.get('title','')}", ""]
