@@ -81,7 +81,6 @@ def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="Rom√
     gallery: list of (sec, data_uri). captions: list of (start, en, ro)."""
     acts = story["acts"]
     color = {a["key"]: PALETTE[i % len(PALETTE)] for i, a in enumerate(acts)}
-    labelt = {a["key"]: t["label"] for a, t in zip(acts, tr.get("acts", acts))}
     beats = story["beats"]
     tbeats = tr.get("beats", [{} for _ in beats])
     total = story.get("duration") or (beats[-1]["t"] + 10 if beats else 1)

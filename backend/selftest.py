@@ -11,6 +11,12 @@ def main():
     assert pipeline.yt_id("dsBXYAwQieI") == "dsBXYAwQieI"
     assert pipeline.mmss(125) == "2:05"
 
+    # source_id: YouTube -> video id; other URLs -> stable hashed id (needs hashlib)
+    assert pipeline.source_id("https://youtu.be/dsBXYAwQieI") == "dsBXYAwQieI"
+    sid = pipeline.source_id("https://vimeo.com/12345")
+    assert sid.startswith("u") and len(sid) == 12, sid
+    assert pipeline.source_id("https://vimeo.com/12345") == sid  # deterministic
+
     # sentence grouping
     segs = [
         {"text": "Hello world.", "start": 0.0, "end": 2.0},

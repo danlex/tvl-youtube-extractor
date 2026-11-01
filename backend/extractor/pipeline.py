@@ -4,7 +4,7 @@ System binaries required on PATH: yt-dlp, ffmpeg, ffprobe, whisper-cli.
 Whisper model: a ggml model file (default small.en) under WHISPER_MODELS.
 """
 import base64
-import glob
+import hashlib
 import html
 import json
 import os

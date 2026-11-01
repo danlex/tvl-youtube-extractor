@@ -24,3 +24,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["extractor"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Runtime-relevant rules only (pyflakes + syntax errors); no style churn.
+select = ["E9", "F"]

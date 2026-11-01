@@ -1,5 +1,7 @@
 # TVL YouTube Extractor
 
+[![CI](https://github.com/danlex/tvl-youtube-extractor/actions/workflows/ci.yml/badge.svg)](https://github.com/danlex/tvl-youtube-extractor/actions/workflows/ci.yml)
+
 Turn any YouTube video into a **story-timeline summary**: a Claude agent watches the
 whole transcript, maps the narrative into acts and beats, and the pipeline pulls
 every frame, a short looping clip per beat, and the full transcript with a

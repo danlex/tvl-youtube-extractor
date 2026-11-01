@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The selftest exercises the pipeline helpers + HTML/Markdown renderers
+      # with no network, whisper, or Claude API — pure stdlib, so no install.
+      - name: Self-test
+        working-directory: backend
+        run: python selftest.py
+
+      - name: Install ruff
+        run: pipx install ruff || pip install ruff
+
+      # Only runtime-relevant rules (pyflakes + syntax), not style churn.
+      - name: Lint
+        working-directory: backend
+        run: ruff check --select E9,F extractor main.py selftest.py
