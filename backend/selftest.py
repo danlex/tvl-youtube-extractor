@@ -23,7 +23,7 @@ def main():
 
     # renderer
     story = {
-        "title": "Test Video", "duration": 30,
+        "title": "Test Video", "duration": 30, "tldr": "A short test clip.",
         "acts": [{"key": "intro", "label": "Intro"}, {"key": "end", "label": "Close"}],
         "beats": [
             {"t": 0, "act": "intro", "title": "Opening", "summary": "first beat"},
@@ -31,7 +31,7 @@ def main():
         ],
     }
     tr = {
-        "title": "Videoclip de test",
+        "title": "Videoclip de test", "tldr": "Un scurt clip de test.",
         "acts": [{"key": "intro", "label": "Intro"}, {"key": "end", "label": "Final"}],
         "beats": [{"title": "Deschidere", "summary": "primul moment"},
                   {"title": "Încheiere", "summary": "al doilea moment"}],
@@ -42,10 +42,24 @@ def main():
         story, tr, ["", ""], [(0, "data:image/jpeg;base64,AAAA")], caps,
         "https://youtu.be/test", lang="Română")
     for needle in ("<!doctype html>", "Story timeline", "Test Video",
-                   "primul moment", "Salut lume.", "Deschidere"):
+                   "primul moment", "Salut lume.", "Deschidere",
+                   "A short test clip.", "Un scurt clip de test."):
         assert needle in html, f"missing: {needle}"
 
-    print("selftest OK — pipeline + render")
+    # markdown export (from a result.json-shaped dict)
+    result = {
+        "title": "Test Video", "tldr": "A short test clip.", "source": "https://youtu.be/test",
+        "duration": 30, "lang": "Română",
+        "beats": [{"mmss": "0:00", "title": "Opening", "summary": "first beat",
+                   "summary_t": "primul moment"}],
+        "captions": [{"mmss": "0:00", "en": "Hello world.", "t": "Salut lume."}],
+    }
+    md = render.render_markdown(result)
+    for needle in ("# Test Video", "> A short test clip.", "### 0:00 — Opening",
+                   "first beat", "*primul moment*", "**0:00** Hello world."):
+        assert needle in md, f"missing in md: {needle}"
+
+    print("selftest OK — pipeline + render + tldr + markdown")
 
 
 if __name__ == "__main__":

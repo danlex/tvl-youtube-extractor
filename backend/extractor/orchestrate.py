@@ -16,6 +16,7 @@ def _story_payload(story, tr, duration):
     tb = (tr or {}).get("beats", [])
     return {
         "title": story["title"], "title_t": (tr or {}).get("title", ""),
+        "tldr": story.get("tldr", ""), "tldr_t": (tr or {}).get("tldr", ""),
         "duration": duration,
         "acts": [{"key": a["key"], "label": a["label"], "color": color[a["key"]]}
                  for a in story["acts"]],
@@ -43,6 +44,8 @@ def build_result(job_id, info, url, lang, story, tr, beats, clip_files, frames, 
         "id": job_id,
         "title": story["title"],
         "title_t": tr.get("title", ""),
+        "tldr": story.get("tldr", ""),
+        "tldr_t": tr.get("tldr", ""),
         "source": url,
         "uploader": info.get("uploader", ""),
         "duration": story.get("duration", 0),

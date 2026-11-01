@@ -14,11 +14,11 @@ import traceback
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from extractor import agent, orchestrate, pipeline
+from extractor import agent, orchestrate, pipeline, render
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 JOBS_DIR = os.path.join(HERE, "jobs")
@@ -198,6 +198,16 @@ def job_view(job_id: str):
     if not os.path.exists(path):
         raise HTTPException(404, "not ready")
     return FileResponse(path, media_type="text/html")
+
+
+@app.get("/api/jobs/{job_id}/summary.md")
+def job_md(job_id: str):
+    path = os.path.join(JOBS_DIR, job_id, "result.json")
+    if not os.path.exists(path):
+        raise HTTPException(404, "not ready")
+    md = render.render_markdown(json.load(open(path)))
+    return PlainTextResponse(md, media_type="text/markdown", headers={
+        "Content-Disposition": f'attachment; filename="{job_id}.md"'})
 
 
 @app.get("/api/jobs/{job_id}/summary.html")

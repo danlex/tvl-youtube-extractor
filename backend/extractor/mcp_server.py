@@ -53,6 +53,8 @@ def extract_video(source: str, language: str = "English") -> dict:
     return {
         "title": r["title"],
         "title_translated": r.get("title_t", ""),
+        "tldr": r.get("tldr", ""),
+        "tldr_translated": r.get("tldr_t", ""),
         "duration_seconds": round(r.get("duration", 0)),
         "language": language,
         "acts": [a["label"] for a in r["acts"]],

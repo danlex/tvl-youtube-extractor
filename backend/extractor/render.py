@@ -20,6 +20,9 @@ body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.55 -apple-sys
 .stats{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 10px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px}
 .stat b{display:block;font-size:19px}
+.tldr{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0 4px;font-size:16px;line-height:1.5}
+.tldr .rt{color:var(--muted);font-size:14px;margin-top:8px}
+.tldr b{color:var(--coral);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:5px}
 h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:46px 0 14px}
 .graph{position:relative;margin:10px 0 30px}
 .track{position:relative;height:46px;border-radius:9px;overflow:hidden;display:flex;border:1px solid var(--line)}
@@ -131,10 +134,16 @@ def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="RomÃ
                       f'<div>{_esc(en)}</div><div class="rotext">{_esc(ro)}</div></div>'
                       for st, en, ro in captions))
 
+    tldr = story.get("tldr", "")
+    tldr_t = (tr or {}).get("tldr", "")
+    tldr_html = ((f'<div class="tldr">{_esc(tldr)}'
+                  + (f'<div class="rt">{_esc(tldr_t)}</div>' if tldr_t else '')
+                  + '</div>') if tldr else '')
     inner = (
         f'<style>{CSS}</style><div class="wrap">'
         f'<div class="head"><h1>{_esc(story["title"])}</h1>'
         f'<div class="src">Source: <a href="{_esc(source_url)}">{_esc(source_url)}</a></div></div>'
+        f'{tldr_html}'
         f'<div class="stats">'
         f'<div class="stat"><b>{mmss(total)}</b>runtime</div>'
         f'<div class="stat"><b>{len(beats)}</b>story beats</div>'
@@ -149,3 +158,27 @@ def render_html(story, tr, beat_clips, gallery, captions, source_url, lang="RomÃ
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{_esc(story["title"])}</title></head><body>{inner}</body></html>')
+
+
+def render_markdown(result):
+    """A plain-markdown export of a result.json (title, TL;DR, beats, transcript)."""
+    r = result
+    out = [f"# {r.get('title','')}", ""]
+    if r.get("tldr"):
+        out += [f"> {r['tldr']}", ""]
+    out += [f"**Source:** {r.get('source','')}  Â·  **Runtime:** "
+            f"{mmss(r.get('duration',0))}  Â·  **Language:** {r.get('lang','')}", "",
+            "## Story", ""]
+    for b in r.get("beats", []):
+        out += [f"### {b.get('mmss','')} â€” {b.get('title','')}", ""]
+        if b.get("summary"):
+            out += [b["summary"], ""]
+        if b.get("summary_t"):
+            out += [f"*{b['summary_t']}*", ""]
+    out += ["## Transcript", ""]
+    for c in r.get("captions", []):
+        line = f"**{c.get('mmss','')}** {c.get('en','')}"
+        if c.get("t"):
+            line += f"  \n_{c['t']}_"
+        out.append(line)
+    return "\n".join(out) + "\n"

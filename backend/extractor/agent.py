@@ -162,6 +162,7 @@ COMBINED_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "properties": {
         "title": {"type": "string"}, "title_t": {"type": "string"},
+        "tldr": {"type": "string"}, "tldr_t": {"type": "string"},
         "acts": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
             "properties": {"key": {"type": "string"}, "label": {"type": "string"},
@@ -178,7 +179,7 @@ COMBINED_SCHEMA = {
             "properties": {"start": {"type": "number"}, "text_t": {"type": "string"}},
             "required": ["start", "text_t"]}},
     },
-    "required": ["title", "title_t", "acts", "beats", "captions"],
+    "required": ["title", "title_t", "tldr", "tldr_t", "acts", "beats", "captions"],
 }
 
 
@@ -187,12 +188,15 @@ def build_and_translate(groups, duration, lang="English", cwd=None):
     build_story + translate). Returns (story, tr) in the same shapes those produce."""
     system = (
         STORY_SYSTEM + "\n\n"
-        f"ALSO translate into {lang}: the overall title (`title_t`), each act label "
-        f"(`label_t`), each beat's title (`title_t`) and summary (`summary_t`), and "
-        f"EVERY transcript line (`captions`: one {{start, text_t}} per input line, "
-        f"same start values, same count, in order). Keep the English originals.\n\n"
+        "Also write a `tldr`: 2-3 plain sentences summarizing the whole video.\n\n"
+        f"ALSO translate into {lang}: the overall title (`title_t`), the tldr "
+        f"(`tldr_t`), each act label (`label_t`), each beat's title (`title_t`) and "
+        f"summary (`summary_t`), and EVERY transcript line (`captions`: one "
+        f"{{start, text_t}} per input line, same start values, same count, in order). "
+        f"Keep the English originals.\n\n"
         "Return ONLY minified JSON, no prose, no code fence, with exactly this shape: "
-        '{"title":str,"title_t":str,"acts":[{"key":str,"label":str,"label_t":str}],'
+        '{"title":str,"title_t":str,"tldr":str,"tldr_t":str,'
+        '"acts":[{"key":str,"label":str,"label_t":str}],'
         '"beats":[{"t":num,"act":str,"title":str,"title_t":str,"summary":str,'
         '"summary_t":str}],"captions":[{"start":num,"text_t":str}]}'
     )
@@ -201,13 +205,13 @@ def build_and_translate(groups, duration, lang="English", cwd=None):
             f"Transcript (each line prefixed with its start time in seconds):\n{lines}")
     c = _run(system, user, COMBINED_SCHEMA, cwd=cwd)
     story = {
-        "title": c["title"], "duration": duration,
+        "title": c["title"], "tldr": c.get("tldr", ""), "duration": duration,
         "acts": [{"key": a["key"], "label": a["label"]} for a in c["acts"]],
         "beats": [{"t": b["t"], "act": b["act"], "title": b["title"],
                    "summary": b["summary"]} for b in c["beats"]],
     }
     tr = {
-        "title": c.get("title_t", ""),
+        "title": c.get("title_t", ""), "tldr": c.get("tldr_t", ""),
         "acts": [{"key": a["key"], "label": a.get("label_t", a["label"])} for a in c["acts"]],
         "beats": [{"title": b.get("title_t", ""), "summary": b.get("summary_t", "")}
                   for b in c["beats"]],
