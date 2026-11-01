@@ -121,6 +121,7 @@
       <a class="rbtn o" id="open" target="_blank">Open full page ↗</a>
       <a class="rbtn" id="dl">Download HTML</a>
       <a class="rbtn" id="dlmd">Download .md</a>
+      <button class="rbtn" id="copytx" type="button">Copy transcript</button>
     </div>
     <iframe id="frame" title="Your extracted page"></iframe>
   </section>
@@ -134,7 +135,7 @@
   const esc = (x) => (x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
   const mmss = (s) => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
 
-  let dur = 0, t0 = 0, timer = null;
+  let dur = 0, t0 = 0, timer = null, curId = null;
   function startTimer(){ t0 = Date.now(); clearInterval(timer); timer = setInterval(()=>{
     const el = Math.floor((Date.now()-t0)/1000);
     let txt = `⏱ ${mmss(el)} elapsed`;
@@ -224,6 +225,7 @@
   async function done(id){
     const view = `/api/jobs/${id}/view.html`, sum = `/api/jobs/${id}/summary.html`;
     const md = `/api/jobs/${id}/summary.md`;
+    curId = id;
     try { const res = await fetch(`/api/jobs/${id}/result`); const meta = await res.json();
       $("rtitle").innerHTML = `<span class="ok">✓</span> ${meta.title || "Your page is ready"}`; } catch(e){}
     $("open").href = view; $("dl").href = sum; $("dl").setAttribute("download","summary.html");
@@ -237,6 +239,7 @@
 
   function showResult(view, title){
     $("rtitle").innerHTML = `<span class="ok">✓</span> ${title || "Your page"}`;
+    curId = (view.match(/\/jobs\/([^/]+)\//) || [])[1] || null;
     $("open").href = view; $("dl").href = view.replace("view.html","summary.html");
     $("dlmd").href = view.replace("view.html","summary.md");
     $("frame").src = view;
@@ -255,6 +258,26 @@
         c.addEventListener("click", () => showResult(c.dataset.v, c.textContent)));
     } catch (e) {}
   }
+  async function copyText(text){
+    try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+    try { // fallback for browsers/contexts without the async clipboard API
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand("copy"); ta.remove(); return ok;
+    } catch(e){ return false; }
+  }
+  $("copytx").addEventListener("click", async () => {
+    if (!curId) return;
+    const btn = $("copytx"), label = btn.textContent;
+    try {
+      const r = await (await fetch(`/api/jobs/${curId}/result`)).json();
+      const text = (r.captions || []).map(c =>
+        c.t ? `[${c.mmss}] ${c.en}\n[${c.mmss}] ${c.t}` : `[${c.mmss}] ${c.en}`).join("\n");
+      btn.textContent = await copyText(text) ? "Copied ✓" : "Copy failed";
+    } catch (e) { btn.textContent = "Copy failed"; }
+    setTimeout(() => { btn.textContent = label; }, 1600);
+  });
   loadRecent();
 </script>
 </body>
