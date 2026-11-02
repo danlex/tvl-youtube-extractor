@@ -7,6 +7,7 @@ import base64
 import hashlib
 import html
 import json
+import time
 import os
 import re
 import shutil
@@ -429,7 +430,9 @@ def transcribe_source(video, url, workdir, whisper_model="small.en", prefer="cap
     so the right caption track / ASR language is chosen (set DETECT_LANG=0 to skip)."""
     hint = _norm_lang(src_lang)
     if not hint and os.environ.get("DETECT_LANG", "1") != "0":
+        t0 = time.time()
         hint = detect_language(video, workdir)
+        print(f"[lang] detected {hint or '?'} in {time.time() - t0:.1f}s")
         src_lang = hint or src_lang
 
     def try_caps():
